@@ -1,4 +1,4 @@
-<h1>Player Video - Bratu Marian</h1>
+<h1>Filme Online</h1>
 
 <p>
 Această pagină afișează un player video fullscreen folosind un ID IMDb introdus direct în link.
@@ -156,17 +156,6 @@ ds_lang=ro
 Dacă sursa video are subtitrare în română, aceasta va fi selectată automat.
 Dacă nu există subtitrare română la sursă, pagina nu o poate crea automat.
 </p>
-
-<hr>
-
-<h2>Fullscreen</h2>
-
-<p>
-Playerul este făcut să ocupe tot ecranul paginii.
-Dacă butonul fullscreen nu funcționează, problema poate veni de la playerul extern sau de la browserul/dispozitivul folosit.
-</p>
-
-<hr>
 
 <h2>Autor</h2>
 
