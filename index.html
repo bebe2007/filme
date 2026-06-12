@@ -2,11 +2,16 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
+
+<!-- Face pagina responsive pe telefon, tabletă, TV, laptop -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Bratu Marian</title>
 
 <style>
-html, body {
+/* Reset complet pentru a elimina marginile și scroll-ul */
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -15,6 +20,7 @@ html, body {
     background: #000;
 }
 
+/* Containerul playerului ocupă tot ecranul */
 #player {
     position: fixed;
     inset: 0;
@@ -23,32 +29,93 @@ html, body {
     background: #000;
 }
 
+/* Iframe-ul ocupă tot containerul */
 iframe {
     width: 100%;
     height: 100%;
     border: 0;
     display: block;
+    background: #000;
+}
+
+/* Mesaj pentru ID lipsă sau invalid */
+.error-message {
+    width: 100%;
+    height: 100%;
+    color: #fff;
+    background: #000;
+    font-family: Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 </style>
 </head>
 
 <body>
 
+<!-- Aici se încarcă automat playerul -->
 <div id="player"></div>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+/*
+    Link film:
+    https://bebe2007.github.io/filme/?id=tt19759204
 
+    Link serial / episod:
+    https://bebe2007.github.io/filme/?id=tt0944947&type=tv&season=1&episode=1
+*/
+
+const params = new URLSearchParams(window.location.search);
+
+const id = params.get("id");
+const type = params.get("type") || "movie";
+const season = params.get("season");
+const episode = params.get("episode");
+
+const player = document.getElementById("player");
+
+/* Verifică dacă ID-ul IMDb este valid */
 if (!id || !/^tt\d+$/.test(id)) {
-    document.getElementById("player").innerHTML =
-        "<div style='color:white;font-family:Arial;display:flex;align-items:center;justify-content:center;width:100%;height:100%;'>ID invalid sau lipsă.</div>";
+    player.innerHTML = `
+        <div class="error-message">
+            ID invalid sau lipsă.<br>
+            Exemplu corect:<br>
+            ?id=tt19759204
+        </div>
+    `;
 } else {
-    document.getElementById("player").innerHTML = `
+
+    let embedUrl = "";
+
+    /*
+        Dacă type=tv și există season + episode,
+        se încarcă episodul serialului.
+    */
+    if (type === "tv" && season && episode) {
+        embedUrl = `https://vidsrc-embed.ru/embed/tv?imdb=${id}&season=${season}&episode=${episode}&ds_lang=ro&autoplay=1&autonext=1`;
+    } else {
+        /*
+            Implicit se încarcă film.
+            Pentru filme nu trebuie type=movie în link.
+        */
+        embedUrl = `https://vidsrc-embed.ru/embed/movie?imdb=${id}&ds_lang=ro&autoplay=1`;
+    }
+
+    /*
+        allowfullscreen + webkitallowfullscreen + mozallowfullscreen
+        ajută pentru fullscreen pe browsere diferite.
+    */
+    player.innerHTML = `
         <iframe
-            src="https://vidsrc-embed.ru/embed/movie?imdb=${id}&ds_lang=ro&autoplay=1"
+            src="${embedUrl}"
             allowfullscreen
-            allow="autoplay; fullscreen; encrypted-media"
+            webkitallowfullscreen
+            mozallowfullscreen
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             referrerpolicy="no-referrer">
         </iframe>
     `;
