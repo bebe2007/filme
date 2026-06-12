@@ -6,43 +6,50 @@
 <title>Player Video</title>
 
 <style>
-body{
-    margin:0;
-    background:#000;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
 }
-.player{
-    width:95vw;
-    max-width:1200px;
-    aspect-ratio:16/9;
+
+#player {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
 }
-iframe{
-    width:100%;
-    height:100%;
-    border:0;
+
+iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
 }
 </style>
 </head>
 
 <body>
 
-<div class="player" id="player"></div>
+<div id="player"></div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
 if (!id || !/^tt\d+$/.test(id)) {
-    document.getElementById("player").innerHTML = "<div style='color:white;font-family:Arial'>ID invalid sau lipsă.</div>";
+    document.getElementById("player").innerHTML =
+        "<div style='color:white;font-family:Arial;display:flex;align-items:center;justify-content:center;width:100%;height:100%;'>ID invalid sau lipsă.</div>";
 } else {
     document.getElementById("player").innerHTML = `
         <iframe
             src="https://vidsrc-embed.ru/embed/movie?imdb=${id}&ds_lang=ro&autoplay=1"
             allowfullscreen
-            allow="autoplay; fullscreen">
+            allow="autoplay; fullscreen; encrypted-media"
+            referrerpolicy="no-referrer">
         </iframe>
     `;
 }
