@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Gerard Butler - Filme Online</title>
+<meta name="description" content="Urmărește online filme cu Gerard Butler. Colecție dedicată actorului Gerard Butler, cu filme de acțiune, thrillere, aventură și animații.">
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+}
+
+body{
+  font-family:'Segoe UI',Arial,sans-serif;
+  color:#fff;
+  overflow-x:hidden;
+  background:
+    linear-gradient(rgba(0,0,0,.74),rgba(0,0,0,.94)),
+    radial-gradient(circle at 18% 12%,rgba(255,140,0,.22),transparent 34%),
+    radial-gradient(circle at 82% 18%,rgba(0,195,255,.18),transparent 30%),
+    linear-gradient(135deg,#050505,#15120d 45%,#000);
+}
+
+/* HERO */
+.hero{
+  min-height:360px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 18px 45px;
+  background:
+    linear-gradient(rgba(0,0,0,.48),rgba(0,0,0,.88)),
+    url("https://images.metahub.space/poster/medium/tt7737786/img") center/cover no-repeat;
+  position:relative;
+}
+
+.hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.08),#050505);
+}
+
+.hero-content{
+  position:relative;
+  z-index:2;
+  max-width:940px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(34px,6vw,72px);
+  color:#ffb347;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  text-shadow:0 0 30px rgba(255,150,0,.85);
+}
+
+.hero h2{
+  margin:12px 0 0;
+  font-size:clamp(17px,3vw,28px);
+  font-weight:500;
+  color:#fff;
+}
+
+.hero p{
+  margin:22px auto 0;
+  max-width:790px;
+  font-size:clamp(15px,2vw,18px);
+  line-height:1.7;
+  color:#e6e6e6;
+}
+
+/* DESCRIERE */
+.description{
+  max-width:1100px;
+  margin:35px auto 15px;
+  padding:0 18px;
+  text-align:center;
+}
+
+.description p{
+  margin:0 auto;
+  max-width:960px;
+  color:#d7d7d7;
+  font-size:17px;
+  line-height:1.8;
+}
+
+/* GRID FILME */
+.movies{
+  width:100%;
+  max-width:1300px;
+  margin:30px auto;
+  padding:15px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:22px;
+}
+
+.movie{
+  position:relative;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:.3s ease;
+  box-shadow:0 0 25px rgba(0,0,0,.45);
+}
+
+.movie:hover{
+  transform:translateY(-7px) scale(1.03);
+  box-shadow:0 0 35px rgba(255,160,0,.45);
+  border-color:rgba(255,179,71,.45);
+}
+
+.movie.disabled{
+  cursor:not-allowed;
+  opacity:.78;
+}
+
+.movie.disabled:hover{
+  transform:none;
+  box-shadow:0 0 25px rgba(0,0,0,.45);
+  border-color:rgba(255,255,255,.08);
+}
+
+.poster-wrap{
+  position:relative;
+}
+
+.movie img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+  display:block;
+  background:#111;
+}
+
+.badge{
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:2;
+  padding:7px 11px;
+  border-radius:30px;
+  background:linear-gradient(135deg,#ff9800,#ff5a00);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  box-shadow:0 0 18px rgba(255,120,0,.55);
+}
+
+.movie h3{
+  min-height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  line-height:1.35;
+  padding:12px;
+  margin:0;
+  text-align:center;
+  color:#fff;
+}
+
+.movie:hover h3{
+  color:#ffb347;
+}
+
+.movie.disabled:hover h3{
+  color:#fff;
+}
+
+/* MODAL PLAYER */
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,.90);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal.show{
+  display:flex;
+}
+
+.modal-box{
+  width:60vw;
+  max-width:1200px;
+  min-width:320px;
+  background:#050505;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 0 45px rgba(255,160,0,.42);
+}
+
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:14px 18px;
+  background:linear-gradient(90deg,rgba(255,160,0,.24),rgba(0,195,255,.10));
+}
+
+.modal-title{
+  font-size:clamp(14px,2vw,18px);
+  font-weight:bold;
+  color:#ffb347;
+  line-height:1.3;
+}
+
+.close{
+  flex:0 0 auto;
+  border:0;
+  background:#ff9800;
+  color:#fff;
+  font-size:25px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.close:hover{
+  background:#ff4d4d;
+}
+
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+}
+
+.video-wrap iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  background:#000;
+}
+
+/* FOOTER */
+footer{
+  width:100%;
+  margin-top:40px;
+  padding:25px 15px;
+  text-align:center;
+  font-size:13px;
+  color:#ccc;
+  background:rgba(0,0,0,.78);
+}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .modal-box{
+    width:82vw;
+  }
+}
+
+@media(max-width:700px){
+  .hero{
+    min-height:330px;
+    padding:50px 15px 35px;
+  }
+
+  .movies{
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+    padding:12px;
+  }
+
+  .movie h3{
+    font-size:13px;
+    min-height:70px;
+  }
+
+  .modal{
+    padding:10px;
+  }
+
+  .modal-box{
+    width:96vw;
+    min-width:0;
+    border-radius:14px;
+  }
+
+  .modal-head{
+    padding:10px 12px;
+  }
+
+  .close{
+    width:36px;
+    height:36px;
+    font-size:22px;
+  }
+}
+
+@media(max-width:380px){
+  .movies{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>Gerard Butler</h1>
+    <h2>Filme online cu Gerard Butler</h2>
+    <p>
+      Această pagină este dedicată actorului Gerard Butler. Aici găsești o colecție organizată de filme cu Gerard Butler, de la producții de acțiune intense și thrillere spectaculoase până la aventuri, drame și animații cunoscute. Alege filmul dorit, apasă pe poster, iar playerul se va deschide automat într-o fereastră modernă, compatibilă cu telefon, tabletă, laptop și televizor.
+    </p>
+  </div>
+</header>
+
+<section class="description">
+  <p>
+    Gerard Butler este cunoscut pentru roluri puternice în filme precum Greenland, Plane, Den of Thieves, Olympus Has Fallen, London Has Fallen și seria How to Train Your Dragon. Pagina de mai jos îți oferă acces rapid la titlurile disponibile, într-un design clar, elegant și ușor de folosit.
+  </p>
+</section>
+
+<main class="movies" id="movies"></main>
+
+<div class="modal" id="videoModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Player</div>
+      <button class="close" onclick="closeModal()" type="button">×</button>
+    </div>
+
+    <div class="video-wrap">
+      <iframe
+        id="movieFrame"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allowfullscreen
+        webkitallowfullscreen
+        mozallowfullscreen>
+      </iframe>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 Filme Online — Colecție dedicată actorului Gerard Butler.
+</footer>
+
+<script>
+const movies = [
+  {
+    title: "Naya Legend of the Golden Dolphin (2027)",
+    id: "tt7890826",
+    url: "https://vsembed.ru/embed/movie/tt7890826",
+    status: "soon"
+  },
+  {
+    title: "How to Train Your Dragon 2 (2027)",
+    id: "tt36416299",
+    url: "https://vsembed.ru/embed/movie/tt36416299",
+    status: "soon"
+  },
+  {
+    title: "Greenland: Migration / Groenlanda 2: Migrația (2026)",
+    id: "tt14850054",
+    url: "https://vsembed.ru/embed/movie/tt14850054"
+  },
+  {
+    title: "How to Train Your Dragon / Cum să îți dresezi dragonul (2025)",
+    id: "tt26743210",
+    url: "https://vsembed.ru/embed/movie/tt26743210"
+  },
+  {
+    title: "In the Hand of Dante / Mâna lui Dante (2025)",
+    id: "tt1333644",
+    url: "https://vsembed.ru/embed/movie/tt1333644"
+  },
+  {
+    title: "Den of Thieves 2: Pantera / Frăția hoților 2: Pantera (2024)",
+    id: "tt8008948",
+    url: "https://vsembed.ru/embed/movie/tt8008948"
+  },
+  {
+    title: "The Night Before Christmas in Wonderland / Ajunul Crăciunului în Țara Minunilor (2024)",
+    id: "tt32919749",
+    url: "https://vsembed.ru/embed/movie/tt32919749"
+  },
+  {
+    title: "Plane / S.O.S.: Aterizare forțată (2023)",
+    id: "tt5884796",
+    url: "https://vsembed.ru/embed/movie/tt5884796"
+  },
+  {
+    title: "Kandahar / Kandahar: Misiune mortală (2023)",
+    id: "tt5761544",
+    url: "https://vsembed.ru/embed/movie/tt5761544"
+  },
+  {
+    title: "Last Seen Alive / Dispărută fără urmă (2022)",
+    id: "tt10242388",
+    url: "https://vsembed.ru/embed/movie/tt10242388"
+  },
+  {
+    title: "Copshop / Jocul criminalilor (2021)",
+    id: "tt5748448",
+    url: "https://vsembed.ru/embed/movie/tt5748448"
+  },
+  {
+    title: "Greenland / Groenlanda (2020)",
+    id: "tt7737786",
+    url: "https://vsembed.ru/embed/movie/tt7737786"
+  },
+  {
+    title: "Angel Has Fallen / Cod Roșu în Serviciile Secrete (2019)",
+    id: "tt6189022",
+    url: "https://vsembed.ru/embed/movie/tt6189022"
+  },
+  {
+    title: "How to Train Your Dragon: The Hidden World / Cum să-ți dresezi dragonul 3 (2019)",
+    id: "tt2386490",
+    url: "https://vsembed.ru/embed/movie/tt2386490"
+  },
+  {
+    title: "Hunter Killer / Operaţiunea Hunter Killer (2018)",
+    id: "tt1846589",
+    url: "https://vsembed.ru/embed/movie/tt1846589"
+  },
+  {
+    title: "Den of Thieves / Frăția hoților (2018)",
+    id: "tt1259528",
+    url: "https://vsembed.ru/embed/movie/tt1259528"
+  },
+  {
+    title: "Geostorm / Geostorm: Pericol Global (2017)",
+    id: "tt1981128",
+    url: "https://vsembed.ru/embed/movie/tt1981128"
+  },
+  {
+    title: "London Has Fallen / Cod roșu la Londra (2016)",
+    id: "tt3300542",
+    url: "https://vsembed.ru/embed/movie/tt3300542"
+  },
+  {
+    title: "Gods of Egypt / Zeii Egiptului (2016)",
+    id: "tt2404233",
+    url: "https://vsembed.ru/embed/movie/tt2404233"
+  },
+  {
+    title: "A Family Man / Un tată de familie (2016)",
+    id: "tt1718924",
+    url: "https://vsembed.ru/embed/movie/tt1718924"
+  },
+  {
+    title: "How to Train Your Dragon 2 / Cum să îți dresezi dragonul 2 (2014)",
+    id: "tt1646971",
+    url: "https://vsembed.ru/embed/movie/tt1646971"
+  },
+  {
+    title: "Olympus Has Fallen / Cod Roșu la Casa Albă (2013)",
+    id: "tt2302755",
+    url: "https://vsembed.ru/embed/movie/tt2302755"
+  },
+  {
+    title: "Movie 43 / Filmul 43: Scandalos (2013)",
+    id: "tt1333125",
+    url: "https://vsembed.ru/embed/movie/tt1333125"
+  },
+  {
+    title: "Chasing Mavericks / Valul perfect (2012)",
+    id: "tt1629757",
+    url: "https://vsembed.ru/embed/movie/tt1629757"
+  }
+];
+
+const box = document.getElementById("movies");
+
+movies.forEach(function(movie){
+  const poster = `https://images.metahub.space/poster/medium/${movie.id}/img`;
+
+  const card = document.createElement("article");
+  card.className = movie.status === "soon" ? "movie disabled" : "movie";
+
+  if(movie.status !== "soon"){
+    card.onclick = function(){
+      openModal(movie.title, movie.url);
+    };
+  }
+
+  card.innerHTML = `
+    <div class="poster-wrap">
+      ${movie.status === "soon" ? '<span class="badge">În curând</span>' : ''}
+      <img src="${poster}" alt="${movie.title}" loading="lazy"
+      onerror="this.src='https://placehold.co/400x600/111827/FFFFFF?text=Poster'">
+    </div>
+    <h3>${movie.title}</h3>
+  `;
+
+  box.appendChild(card);
+});
+
+function openModal(title, url){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("movieFrame").src = url;
+  document.getElementById("videoModal").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(){
+  document.getElementById("movieFrame").src = "";
+  document.getElementById("videoModal").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+document.getElementById("videoModal").addEventListener("click", function(e){
+  if(e.target.id === "videoModal"){
+    closeModal();
+  }
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    closeModal();
+  }
+});
+</script>
+
+</body>
+</html>
