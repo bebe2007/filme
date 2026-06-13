@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>The Boroughs / Cartierele - Serial Online</title>
+<meta name="description" content="Urmărește online serialul The Boroughs / Cartierele.">
+
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;min-height:100%}
+
+body{
+  font-family:'Segoe UI',Arial,sans-serif;
+  color:#fff;
+  overflow-x:hidden;
+  background:
+    linear-gradient(rgba(0,0,0,.80),rgba(0,0,0,.97)),
+    radial-gradient(circle at 18% 12%,rgba(50,120,180,.30),transparent 34%),
+    radial-gradient(circle at 82% 18%,rgba(180,120,50,.20),transparent 30%),
+    linear-gradient(135deg,#050505,#081018 45%,#000);
+}
+
+.hero{
+  min-height:370px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 18px 45px;
+  background:
+    linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.90)),
+    url("https://images.metahub.space/poster/medium/tt27557289/img") center/cover no-repeat;
+  position:relative;
+}
+
+.hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.10),#050505);
+}
+
+.hero-content{
+  position:relative;
+  z-index:2;
+  max-width:960px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(34px,6vw,72px);
+  color:#66c7ff;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  text-shadow:0 0 30px rgba(102,199,255,.85);
+}
+
+.hero h2{
+  margin:12px 0 0;
+  font-size:clamp(17px,3vw,28px);
+  font-weight:500;
+}
+
+.hero p{
+  margin:22px auto 0;
+  max-width:850px;
+  font-size:clamp(15px,2vw,18px);
+  line-height:1.7;
+  color:#e6e6e6;
+}
+
+.description{
+  max-width:1100px;
+  margin:35px auto 15px;
+  padding:0 18px;
+  text-align:center;
+}
+
+.description p{
+  margin:0 auto;
+  max-width:960px;
+  color:#d7d7d7;
+  font-size:17px;
+  line-height:1.8;
+}
+
+.seasons{
+  max-width:1100px;
+  margin:30px auto 10px;
+  padding:0 15px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:12px;
+}
+
+.season-btn{
+  border:1px solid rgba(102,199,255,.55);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  padding:12px 22px;
+  border-radius:30px;
+  cursor:pointer;
+  font-size:15px;
+  font-weight:700;
+  transition:.25s ease;
+}
+
+.season-btn:hover,
+.season-btn.active{
+  background:#66c7ff;
+  color:#111;
+  box-shadow:0 0 25px rgba(102,199,255,.45);
+}
+
+.episodes{
+  width:100%;
+  max-width:1300px;
+  margin:25px auto;
+  padding:15px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:22px;
+}
+
+.episode{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:.3s ease;
+  box-shadow:0 0 25px rgba(0,0,0,.45);
+}
+
+.episode:hover{
+  transform:translateY(-6px) scale(1.03);
+  box-shadow:0 0 35px rgba(102,199,255,.48);
+  border-color:rgba(102,199,255,.48);
+}
+
+.episode img{
+  width:100%;
+  height:230px;
+  object-fit:contain;
+  display:block;
+  background:#000;
+}
+
+.episode h3{
+  padding:14px;
+  margin:0;
+  text-align:center;
+  font-size:16px;
+  line-height:1.4;
+  color:#fff;
+}
+
+.episode span{
+  display:block;
+  margin-top:8px;
+  color:#66c7ff;
+  font-size:13px;
+  font-weight:700;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,.90);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal.show{display:flex}
+
+.modal-box{
+  width:60vw;
+  max-width:1200px;
+  min-width:320px;
+  background:#050505;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 0 45px rgba(102,199,255,.42);
+}
+
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:14px 18px;
+  background:linear-gradient(90deg,rgba(102,199,255,.24),rgba(180,120,50,.14));
+}
+
+.modal-title{
+  font-size:clamp(14px,2vw,18px);
+  font-weight:bold;
+  color:#66c7ff;
+  line-height:1.3;
+}
+
+.close{
+  flex:0 0 auto;
+  border:0;
+  background:#66c7ff;
+  color:#111;
+  font-size:25px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  cursor:pointer;
+}
+
+.close:hover{
+  background:#ff4d4d;
+  color:#fff;
+}
+
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+}
+
+.video-wrap iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  background:#000;
+}
+
+footer{
+  width:100%;
+  margin-top:40px;
+  padding:25px 15px;
+  text-align:center;
+  font-size:13px;
+  color:#ccc;
+  background:rgba(0,0,0,.78);
+}
+
+@media(max-width:1024px){
+  .modal-box{width:82vw}
+}
+
+@media(max-width:700px){
+  .hero{min-height:330px;padding:50px 15px 35px}
+  .episodes{grid-template-columns:repeat(2,1fr);gap:14px;padding:12px}
+  .episode img{height:190px}
+  .episode h3{font-size:14px}
+  .modal{padding:10px}
+  .modal-box{width:96vw;min-width:0;border-radius:14px}
+  .modal-head{padding:10px 12px}
+  .close{width:36px;height:36px;font-size:22px}
+}
+
+@media(max-width:380px){
+  .episodes{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>The Boroughs / Cartierele</h1>
+    <h2>Serial online</h2>
+    <p>
+      Această pagină este dedicată serialului The Boroughs / Cartierele. Alege episodul dorit, iar playerul se va deschide automat într-o fereastră modernă, compatibilă cu telefon, tabletă, laptop și televizor.
+    </p>
+  </div>
+</header>
+
+<section class="description">
+  <p>
+    The Boroughs / Cartierele este organizat aici într-o pagină simplă și rapidă, cu episoade încărcate automat prin IMDb ID. Selectează episodul dorit pentru a deschide playerul.
+  </p>
+</section>
+
+<div class="seasons" id="seasons"></div>
+<main class="episodes" id="episodes"></main>
+
+<div class="modal" id="videoModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Player</div>
+      <button class="close" onclick="closeModal()" type="button">×</button>
+    </div>
+
+    <div class="video-wrap">
+      <iframe
+        id="episodeFrame"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allowfullscreen
+        webkitallowfullscreen
+        mozallowfullscreen>
+      </iframe>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 Filme Online — Serial dedicat The Boroughs / Cartierele.
+</footer>
+
+<script>
+const imdbID = "tt27557289";
+const episodeImage = "https://images.metahub.space/poster/medium/tt27557289/img";
+
+const seasonsData = [
+  {
+    season: 1,
+    title: "Sezonul 1",
+    episodes: 8,
+    available: true
+  }
+];
+
+const seasonsBox = document.getElementById("seasons");
+const episodesBox = document.getElementById("episodes");
+
+seasonsData.forEach(function(seasonItem, index){
+  const btn = document.createElement("button");
+  btn.className = index === 0 ? "season-btn active" : "season-btn";
+  btn.textContent = seasonItem.title;
+
+  btn.onclick = function(){
+    document.querySelectorAll(".season-btn").forEach(function(button){
+      button.classList.remove("active");
+    });
+
+    btn.classList.add("active");
+    renderEpisodes(seasonItem);
+  };
+
+  seasonsBox.appendChild(btn);
+});
+
+function renderEpisodes(seasonItem){
+  episodesBox.innerHTML = "";
+
+  for(let i = 1; i <= seasonItem.episodes; i++){
+    const episodeCard = document.createElement("article");
+    episodeCard.className = "episode";
+
+    episodeCard.onclick = function(){
+      const url = `https://vsembed.ru/embed/tv?imdb=${imdbID}&season=${seasonItem.season}&episode=${i}`;
+      openModal(`The Boroughs / Cartierele - Episodul ${i}`, url);
+    };
+
+    episodeCard.innerHTML = `
+      <img
+        src="${episodeImage}"
+        alt="The Boroughs / Cartierele - Episodul ${i}"
+        loading="lazy"
+        onerror="this.src='https://placehold.co/800x450/111827/FFFFFF?text=The+Boroughs'">
+
+      <h3>
+        Episodul ${i}
+        <span>Deschide playerul</span>
+      </h3>
+    `;
+
+    episodesBox.appendChild(episodeCard);
+  }
+}
+
+function openModal(title,url){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("episodeFrame").src = url;
+  document.getElementById("videoModal").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(){
+  document.getElementById("episodeFrame").src = "";
+  document.getElementById("videoModal").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+document.getElementById("videoModal").addEventListener("click",function(e){
+  if(e.target.id === "videoModal"){
+    closeModal();
+  }
+});
+
+document.addEventListener("keydown",function(e){
+  if(e.key === "Escape"){
+    closeModal();
+  }
+});
+
+renderEpisodes(seasonsData[0]);
+</script>
+
+</body>
+</html>
