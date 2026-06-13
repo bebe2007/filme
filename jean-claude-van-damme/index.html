@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Jean-Claude Van Damme - Filme Online</title>
+<meta name="description" content="Urmărește online filme cu Jean-Claude Van Damme. Colecție dedicată actorului Jean-Claude Van Damme, cu filme de acțiune, arte marțiale și thrillere.">
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+}
+
+body{
+  font-family:'Segoe UI',Arial,sans-serif;
+  color:#fff;
+  overflow-x:hidden;
+  background:
+    linear-gradient(rgba(0,0,0,.76),rgba(0,0,0,.95)),
+    radial-gradient(circle at 15% 10%,rgba(220,20,60,.28),transparent 34%),
+    radial-gradient(circle at 85% 18%,rgba(0,120,255,.20),transparent 32%),
+    linear-gradient(135deg,#050505,#12070a 45%,#000);
+}
+
+.hero{
+  min-height:360px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 18px 45px;
+  background:
+    linear-gradient(rgba(0,0,0,.52),rgba(0,0,0,.88)),
+    url("https://images.metahub.space/poster/medium/tt0092675/img") center/cover no-repeat;
+  position:relative;
+}
+
+.hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.08),#050505);
+}
+
+.hero-content{
+  position:relative;
+  z-index:2;
+  max-width:940px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(32px,6vw,70px);
+  color:#ff2f4f;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  text-shadow:0 0 30px rgba(255,47,79,.85);
+}
+
+.hero h2{
+  margin:12px 0 0;
+  font-size:clamp(17px,3vw,28px);
+  font-weight:500;
+  color:#fff;
+}
+
+.hero p{
+  margin:22px auto 0;
+  max-width:800px;
+  font-size:clamp(15px,2vw,18px);
+  line-height:1.7;
+  color:#e6e6e6;
+}
+
+.description{
+  max-width:1100px;
+  margin:35px auto 15px;
+  padding:0 18px;
+  text-align:center;
+}
+
+.description p{
+  margin:0 auto;
+  max-width:960px;
+  color:#d7d7d7;
+  font-size:17px;
+  line-height:1.8;
+}
+
+.movies{
+  width:100%;
+  max-width:1300px;
+  margin:30px auto;
+  padding:15px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:22px;
+}
+
+.movie{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:.3s ease;
+  box-shadow:0 0 25px rgba(0,0,0,.45);
+}
+
+.movie:hover{
+  transform:translateY(-7px) scale(1.03);
+  box-shadow:0 0 35px rgba(255,47,79,.48);
+  border-color:rgba(255,47,79,.48);
+}
+
+.movie img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+  display:block;
+  background:#111;
+}
+
+.movie h3{
+  min-height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  line-height:1.35;
+  padding:12px;
+  margin:0;
+  text-align:center;
+  color:#fff;
+}
+
+.movie:hover h3{
+  color:#ff2f4f;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,.90);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal.show{display:flex}
+
+.modal-box{
+  width:60vw;
+  max-width:1200px;
+  min-width:320px;
+  background:#050505;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 0 45px rgba(255,47,79,.42);
+}
+
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:14px 18px;
+  background:linear-gradient(90deg,rgba(255,47,79,.24),rgba(0,120,255,.12));
+}
+
+.modal-title{
+  font-size:clamp(14px,2vw,18px);
+  font-weight:bold;
+  color:#ff2f4f;
+  line-height:1.3;
+}
+
+.close{
+  flex:0 0 auto;
+  border:0;
+  background:#ff2f4f;
+  color:#fff;
+  font-size:25px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.close:hover{background:#ff4d4d}
+
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+}
+
+.video-wrap iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  background:#000;
+}
+
+footer{
+  width:100%;
+  margin-top:40px;
+  padding:25px 15px;
+  text-align:center;
+  font-size:13px;
+  color:#ccc;
+  background:rgba(0,0,0,.78);
+}
+
+@media(max-width:1024px){
+  .modal-box{width:82vw}
+}
+
+@media(max-width:700px){
+  .hero{
+    min-height:330px;
+    padding:50px 15px 35px;
+  }
+
+  .movies{
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+    padding:12px;
+  }
+
+  .movie h3{
+    font-size:13px;
+    min-height:70px;
+  }
+
+  .modal{padding:10px}
+
+  .modal-box{
+    width:96vw;
+    min-width:0;
+    border-radius:14px;
+  }
+
+  .modal-head{padding:10px 12px}
+
+  .close{
+    width:36px;
+    height:36px;
+    font-size:22px;
+  }
+}
+
+@media(max-width:380px){
+  .movies{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>Jean-Claude Van Damme</h1>
+    <h2>Filme online cu Jean-Claude Van Damme</h2>
+    <p>
+      Această pagină este dedicată actorului Jean-Claude Van Damme, unul dintre cele mai cunoscute nume ale filmelor de acțiune și arte marțiale. Aici găsești o colecție organizată de filme cu Jean-Claude Van Damme, de la titluri clasice precum Bloodsport, Kickboxer, Lionheart și Universal Soldier până la producții mai recente. Alege filmul dorit, apasă pe poster, iar playerul se va deschide automat într-o fereastră modernă, compatibilă cu telefon, tabletă, laptop și televizor.
+    </p>
+  </div>
+</header>
+
+<section class="description">
+  <p>
+    Jean-Claude Van Damme a devenit celebru prin stilul său de luptă, flexibilitatea spectaculoasă și rolurile intense din filme de acțiune. Colecția de mai jos este construită pentru acces rapid la filmele sale, într-un design clar, elegant și ușor de folosit.
+  </p>
+</section>
+
+<main class="movies" id="movies"></main>
+
+<div class="modal" id="videoModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Player</div>
+      <button class="close" onclick="closeModal()" type="button">×</button>
+    </div>
+
+    <div class="video-wrap">
+      <iframe
+        id="movieFrame"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allowfullscreen
+        webkitallowfullscreen
+        mozallowfullscreen>
+      </iframe>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 Filme Online — Colecție dedicată actorului Jean-Claude Van Damme.
+</footer>
+
+<script>
+const movies = [
+  ["The Gardener (2025)", "tt11230908"],
+  ["Kill 'Em All 2 (2024)", "tt6549510"],
+  ["Darkness of Man (2024)", "tt23173980"],
+  ["Minions: The Rise of Gru (2022)", "tt5113044"],
+  ["The Last Mercenary / Ultimul mercenar (2021)", "tt12808182"],
+  ["We Die Young (2019)", "tt7903530"],
+  ["The Bouncer / Lukas (2018)", "tt7816392"],
+  ["Black Water (2018)", "tt5622412"],
+  ["Kickboxer: Retaliation (2018)", "tt5208950"],
+  ["Kill 'Em All (2017)", "tt5767628"],
+  ["Kickboxer: Vengeance (2016)", "tt3082898"],
+  ["Pound of Flesh (2015)", "tt3488328"],
+  ["Jian Bing Man (2015)", "tt4818250"],
+  ["Swelter (2014)", "tt2112277"],
+  ["Welcome to the Jungle (2013)", "tt2193265"],
+  ["Enemies Closer (2013)", "tt2395199"],
+  ["U.F.O. (2012)", "tt2040578"],
+  ["6 Bullets (2012)", "tt1975249"],
+  ["Universal Soldier: Day of Reckoning (2012)", "tt1659343"],
+  ["The Expendables 2 / Eroi de sacrificiu 2 (2012)", "tt1764651"],
+  ["Dragon Eyes (2012)", "tt1735862"],
+  ["Assassination Games (2011)", "tt1436568"],
+  ["Kung Fu Panda 2 (2011)", "tt1302011"],
+  ["The Eagle Path / Full Love (2010)", "tt1570989"],
+  ["Universal Soldier: Regeneration (2009)", "tt1288403"],
+  ["JCVD (2008)", "tt1130988"],
+  ["The Shepherd: Border Patrol (2008)", "tt0827521"],
+  ["Until Death (2007)", "tt0783598"],
+  ["The Hard Corps (2006)", "tt0462329"],
+  ["Second in Command (2006)", "tt0458471"],
+  ["Wake of Death (2004)", "tt0367479"],
+  ["In Hell (2003)", "tt0339135"],
+  ["Derailed (2002)", "tt0301414"],
+  ["Replicant (2001)", "tt0238552"],
+  ["The Order (2001)", "tt0193364"],
+  ["Inferno / Desert Heat (1999)", "tt0139151"],
+  ["Universal Soldier: The Return (1999)", "tt0176269"],
+  ["Legionnaire (1998)", "tt0126388"],
+  ["Knock Off (1998)", "tt0120724"],
+  ["Double Team (1997)", "tt0119013"],
+  ["Maximum Risk (1996)", "tt0117011"],
+  ["The Quest (1996)", "tt0117420"],
+  ["Sudden Death (1995)", "tt0114576"],
+  ["Street Fighter (1994)", "tt0111301"],
+  ["Timecop (1994)", "tt0111438"],
+  ["Hard Target (1993)", "tt0107076"],
+  ["Nowhere to Run (1993)", "tt0107711"],
+  ["Universal Soldier (1992)", "tt0105698"],
+  ["Double Impact (1991)", "tt0101764"],
+  ["Lionheart (1990)", "tt0100029"],
+  ["Death Warrant (1990)", "tt0099385"],
+  ["Kickboxer (1989)", "tt0097659"],
+  ["Cyborg (1989)", "tt0097138"],
+  ["Black Eagle (1988)", "tt0094750"],
+  ["Bloodsport (1988)", "tt0092675"],
+  ["No Retreat, No Surrender (1986)", "tt0089695"]
+];
+
+const box = document.getElementById("movies");
+
+movies.forEach(function(movie){
+  const title = movie[0];
+  const id = movie[1];
+  const poster = `https://images.metahub.space/poster/medium/${id}/img`;
+  const url = `https://vsembed.ru/embed/movie/${id}`;
+
+  const card = document.createElement("article");
+  card.className = "movie";
+  card.onclick = function(){
+    openModal(title, url);
+  };
+
+  card.innerHTML = `
+    <img src="${poster}" alt="${title}" loading="lazy"
+    onerror="this.src='https://placehold.co/400x600/111827/FFFFFF?text=Poster'">
+    <h3>${title}</h3>
+  `;
+
+  box.appendChild(card);
+});
+
+function openModal(title, url){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("movieFrame").src = url;
+  document.getElementById("videoModal").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(){
+  document.getElementById("movieFrame").src = "";
+  document.getElementById("videoModal").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+document.getElementById("videoModal").addEventListener("click", function(e){
+  if(e.target.id === "videoModal"){
+    closeModal();
+  }
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    closeModal();
+  }
+});
+</script>
+
+</body>
+</html>
