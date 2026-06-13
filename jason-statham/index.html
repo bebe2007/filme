@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Jason Statham - Filme Online</title>
+<meta name="description" content="Filme cu Jason Statham">
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+}
+
+body{
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:radial-gradient(circle at top,#1b263b,#050505 70%);
+  color:#fff;
+  overflow-x:hidden;
+}
+
+header{
+  padding:35px 15px;
+  text-align:center;
+  background:rgba(0,0,0,.75);
+}
+
+header h1{
+  margin:0;
+  font-size:clamp(26px,4vw,42px);
+  color:#00c3ff;
+  text-shadow:0 0 25px #00c3ff;
+}
+
+header p{
+  margin:10px auto 0;
+  color:#ccc;
+}
+
+.movies{
+  max-width:1300px;
+  margin:30px auto;
+  padding:15px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:22px;
+}
+
+.movie{
+  background:rgba(255,255,255,.06);
+  border-radius:18px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:.3s;
+  box-shadow:0 0 25px rgba(0,0,0,.45);
+}
+
+.movie:hover{
+  transform:translateY(-6px) scale(1.03);
+  box-shadow:0 0 30px rgba(0,195,255,.45);
+}
+
+.movie img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+  display:block;
+  background:#111;
+}
+
+.movie h2{
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  line-height:1.35;
+  padding:12px;
+  margin:0;
+  text-align:center;
+}
+
+.movie:hover h2{color:#00c3ff}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.92);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+
+.modal.show{display:flex}
+
+.modal-box{
+  width:95vw;
+  max-width:1600px;
+  background:#050505;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 0 45px rgba(0,195,255,.35);
+}
+
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:14px 18px;
+  background:rgba(0,195,255,.12);
+}
+
+.modal-title{
+  font-size:clamp(14px,2vw,18px);
+  font-weight:bold;
+  color:#00c3ff;
+}
+
+.close{
+  border:0;
+  background:#00c3ff;
+  color:#fff;
+  font-size:24px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  cursor:pointer;
+}
+
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+}
+
+.video-wrap iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+}
+
+footer{
+  margin-top:40px;
+  padding:25px 15px;
+  text-align:center;
+  font-size:12px;
+  color:#ccc;
+  background:rgba(0,0,0,.75);
+}
+
+@media(max-width:700px){
+  .movies{
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+    padding:12px;
+  }
+
+  .movie h2{
+    font-size:13px;
+    min-height:64px;
+  }
+
+  .modal-box{
+    width:100vw;
+    border-radius:0;
+  }
+}
+
+@media(max-width:380px){
+  .movies{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Jason Statham</h1>
+  <p>Filme Online cu Jason Statham</p>
+</header>
+
+<div class="movies" id="movies"></div>
+
+<div class="modal" id="videoModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Player</div>
+      <button class="close" onclick="closeModal()" type="button">×</button>
+    </div>
+
+    <div class="video-wrap">
+      <iframe
+        id="movieFrame"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allowfullscreen
+        webkitallowfullscreen
+        mozallowfullscreen>
+      </iframe>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 Filme Online — Jason Statham
+</footer>
+
+<script>
+const movies = [
+  ["Shelter / Protectorul (2026)", "tt32357218"],
+  ["A Working Man / Un bărbat de onoare (2025)", "tt9150192"],
+  ["The Beekeeper / The Beekeeper: Răzbunare iminentă (2024)", "tt15314262"],
+  ["Meg 2: The Trench / Meg 2: Confruntare în adâncuri (2023)", "tt9224104"],
+  ["Operation Fortune: Ruse de guerre / Operațiunea Fortune: Urzeala războiului (2023)", "tt7985704"],
+  ["Fast X / Furios și iute X (2023)", "tt5433140"],
+  ["Expend4bles / Expendables 4: Eroi de sacrificiu (2023)", "tt3291150"],
+  ["Fast & Furious 9 / Furios și iute 9 (2021)", "tt5433138"],
+  ["Wrath of Man / Furia unui om periculos (2021)", "tt11083552"],
+  ["Fast & Furious Presents: Hobbs & Shaw / Furios și iute: Hobbs & Shaw (2019)", "tt6806448"],
+  ["The Meg / MEG: Confruntare în adâncuri (2018)", "tt4779682"],
+  ["Fast & Furious 8 / Furios și iute 8 (2017)", "tt4630562"],
+  ["Mechanic: Resurrection / Mecanicul 2 (2016)", "tt3522806"],
+  ["Spy / Spioana (2015)", "tt3079380"],
+  ["Furious Seven / Furios și iute 7 (2015)", "tt2820852"],
+  ["Wild Card / Joc periculos (2015)", "tt2231253"],
+  ["The Expendables 3 / The Expendables 3: Eroi de sacrificiu (2014)", "tt2333784"],
+  ["Homefront / Homefront: Orașul fără legi (2013)", "tt2312718"],
+  ["Fast & Furious 6 / Furios și iute 6 (2013)", "tt1905041"],
+  ["Parker (2013)", "tt1904996"],
+  ["Hummingbird / Legea străzii (2013)", "tt1893256"],
+  ["The Expendables 2 / Eroi de sacrificiu 2 (2012)", "tt1764651"],
+  ["Safe / În siguranță (2012)", "tt1656190"],
+  ["Killer Elite / Killer Elite: Înfruntarea (2011)", "tt1448755"]
+];
+
+const box = document.getElementById("movies");
+
+movies.forEach(movie => {
+  const title = movie[0];
+  const id = movie[1];
+  const poster = `https://images.metahub.space/poster/medium/${id}/img`;
+
+  /*
+    Pune aici playerul tău legal.
+    Exemplu:
+    const url = `https://siteul-tau.ro/player/?id=${id}`;
+  */
+  const url = `https://vsembed.ru/embed/movie?imdb=${id}`;
+
+  const card = document.createElement("div");
+  card.className = "movie";
+  card.onclick = () => openModal(title, url);
+
+  card.innerHTML = `
+    <img src="${poster}" alt="${title}" loading="lazy"
+    onerror="this.src='https://placehold.co/400x600/111827/FFFFFF?text=Poster'">
+    <h2>${title}</h2>
+  `;
+
+  box.appendChild(card);
+});
+
+function openModal(title, url){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("movieFrame").src = url;
+  document.getElementById("videoModal").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(){
+  document.getElementById("movieFrame").src = "";
+  document.getElementById("videoModal").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+document.getElementById("videoModal").addEventListener("click", function(e){
+  if(e.target.id === "videoModal"){
+    closeModal();
+  }
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    closeModal();
+  }
+});
+</script>
+
+</body>
+</html>
