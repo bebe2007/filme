@@ -23,6 +23,9 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
+# IMDb contains some unusually large TSV fields. Python's csv default (128 KiB) is too small.
+csv.field_size_limit(64 * 1024 * 1024)
+
 IMDB_BASE = "https://datasets.imdbws.com"
 VSE_BASE = "https://vsembed.ru"
 IMDB_FILES = [
