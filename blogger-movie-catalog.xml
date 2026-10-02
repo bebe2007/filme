@@ -518,7 +518,7 @@
     DATA_BASE_URL: 'https://bebe2007.github.io/filme/data',
     PROVIDER_BASE_URL: 'https://vsembed.ru',
     POSTER_BASE_URL: 'https://images.metahub.space/poster/medium/',
-    ITEMS_PER_PAGE: 80,
+    ITEMS_PER_PAGE: 70,
     DEFAULT_SUBTITLE_LANG: 'ro',
     ENABLE_PROVIDER_INFO: true
   };
