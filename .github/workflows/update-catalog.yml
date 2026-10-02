@@ -16,16 +16,13 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-catalog
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 240
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -40,6 +37,21 @@ jobs:
           python scripts/build_catalog.py --out public/data --work .catalog-work --page-size 70
           touch public/.nojekyll
 
+      - name: Verify generated catalog
+        run: |
+          test -s public/data/meta.json
+          test -s public/data/movies/page-1.json
+          test -s public/data/tv/page-1.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          meta = json.loads(Path("public/data/meta.json").read_text(encoding="utf-8"))
+          assert meta["items_per_page"] == 70
+          assert meta["movies"] > 0
+          assert meta["tv"] > 0
+          print(meta)
+          PY
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
@@ -48,6 +60,14 @@ jobs:
         with:
           path: public
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
