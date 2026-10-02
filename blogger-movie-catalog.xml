@@ -1,0 +1,993 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html b:version='2' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
+<head>
+  <b:include data='blog' name='all-head-content'/>
+  <title><data:blog.pageTitle/></title>
+  <meta content='width=device-width, initial-scale=1, viewport-fit=cover' name='viewport'/>
+  <meta content='Filme și seriale disponibile în catalog, cu informații factuale, căutare, filtre și player integrat.' name='description'/>
+  <meta content='#08090c' name='theme-color'/>
+
+  <b:skin><![CDATA[
+  :root{
+    --bg:#08090c;
+    --bg-2:#101218;
+    --card:#14171e;
+    --card-2:#191d26;
+    --line:rgba(255,255,255,.10);
+    --text:#f7f8fa;
+    --muted:#aeb5c3;
+    --accent:#ffc400;
+    --accent-2:#ff8a00;
+    --danger:#ff5c5c;
+    --ok:#40d394;
+    --shadow:0 22px 70px rgba(0,0,0,.42);
+    --radius:18px;
+    --max:1800px;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;background:var(--bg)}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at 12% 0%,rgba(255,196,0,.10),transparent 28%),
+      radial-gradient(circle at 88% 10%,rgba(255,70,70,.08),transparent 26%),
+      linear-gradient(180deg,#08090c 0%,#0b0d12 50%,#07080a 100%);
+    overflow-x:hidden;
+  }
+  body.modal-open{overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  button,input,select{font:inherit}
+  button{color:inherit}
+  img{max-width:100%}
+
+  .app-header{
+    position:sticky;
+    top:0;
+    z-index:1000;
+    background:rgba(8,9,12,.88);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    border-bottom:1px solid var(--line);
+  }
+  .header-inner{
+    max-width:var(--max);
+    margin:0 auto;
+    min-height:72px;
+    padding:10px 22px;
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center;
+    gap:22px;
+  }
+  .brand{
+    border:0;background:transparent;color:inherit;padding:0;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    font-weight:900;
+    letter-spacing:.02em;
+    white-space:nowrap;
+    cursor:pointer;
+  }
+  .brand-mark{
+    width:40px;height:40px;border-radius:12px;
+    display:grid;place-items:center;
+    color:#111;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 9px 30px rgba(255,176,0,.25);
+  }
+  .brand-name{font-size:18px}
+  .nav{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:4px;
+    min-width:0;
+  }
+  .nav button{
+    border:0;
+    background:transparent;
+    padding:10px 13px;
+    border-radius:11px;
+    cursor:pointer;
+    color:var(--muted);
+    font-weight:700;
+  }
+  .nav button:hover,.nav button.active{color:#111;background:var(--accent)}
+  .header-search{
+    width:min(430px,34vw);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .search-field{
+    width:100%;
+    height:44px;
+    border:1px solid var(--line);
+    background:#0d0f14;
+    color:var(--text);
+    border-radius:13px;
+    padding:0 14px;
+    outline:none;
+  }
+  .search-field:focus{border-color:rgba(255,196,0,.65);box-shadow:0 0 0 3px rgba(255,196,0,.10)}
+  .search-btn,.icon-btn{
+    height:44px;
+    border:0;
+    border-radius:13px;
+    background:var(--accent);
+    color:#111;
+    font-weight:900;
+    padding:0 15px;
+    cursor:pointer;
+  }
+
+  .hero{
+    max-width:var(--max);
+    margin:0 auto;
+    padding:48px 22px 24px;
+  }
+  .hero-box{
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-radius:28px;
+    padding:clamp(28px,5vw,70px);
+    background:
+      linear-gradient(120deg,rgba(6,7,10,.97),rgba(11,13,18,.78)),
+      radial-gradient(circle at 85% 35%,rgba(255,196,0,.20),transparent 34%);
+    box-shadow:var(--shadow);
+  }
+  .hero-box:after{
+    content:"";
+    position:absolute;
+    width:420px;height:420px;border-radius:50%;
+    right:-170px;top:-230px;
+    background:radial-gradient(circle,rgba(255,196,0,.28),transparent 66%);
+    pointer-events:none;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 11px;
+    border:1px solid rgba(255,196,0,.25);
+    background:rgba(255,196,0,.08);
+    color:#ffe27a;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .hero h1{
+    margin:16px 0 0;
+    max-width:980px;
+    font-size:clamp(34px,5vw,72px);
+    line-height:.98;
+    letter-spacing:-.04em;
+  }
+  .hero p{
+    max-width:900px;
+    margin:18px 0 0;
+    color:var(--muted);
+    font-size:clamp(15px,1.6vw,19px);
+    line-height:1.7;
+  }
+
+  .toolbar{
+    max-width:var(--max);
+    margin:0 auto;
+    padding:16px 22px 8px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .toolbar select{
+    height:42px;
+    min-width:150px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#0f1117;
+    color:var(--text);
+    padding:0 12px;
+    outline:none;
+  }
+  .toolbar .spacer{flex:1}
+  .count-text{color:var(--muted);font-size:14px}
+
+  .content{
+    max-width:var(--max);
+    margin:0 auto;
+    padding:12px 22px 60px;
+  }
+  .section-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:14px;
+    margin:18px 0 16px;
+  }
+  .section-head h2{margin:0;font-size:clamp(22px,2.4vw,34px);letter-spacing:-.025em}
+  .section-head p{margin:5px 0 0;color:var(--muted);font-size:14px}
+
+  .movie-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
+    gap:18px;
+  }
+  .movie-card{
+    position:relative;
+    min-width:0;
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    background:linear-gradient(180deg,var(--card),#0f1116);
+    box-shadow:0 12px 34px rgba(0,0,0,.20);
+    cursor:pointer;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+  }
+  .movie-card:hover,.movie-card:focus-within{
+    transform:translateY(-5px);
+    border-color:rgba(255,196,0,.46);
+    box-shadow:0 18px 45px rgba(0,0,0,.34),0 0 0 1px rgba(255,196,0,.12);
+  }
+  .poster-wrap{position:relative;aspect-ratio:2/3;background:#0c0e12;overflow:hidden}
+  .poster-wrap img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .3s ease}
+  .movie-card:hover .poster-wrap img{transform:scale(1.035)}
+  .badges{position:absolute;top:9px;left:9px;right:9px;display:flex;justify-content:space-between;gap:6px;pointer-events:none}
+  .badge{
+    display:inline-flex;align-items:center;min-height:25px;
+    padding:4px 7px;border-radius:8px;
+    background:rgba(8,9,12,.86);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.12);
+    font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .badge.quality{color:#111;background:var(--accent);border-color:transparent}
+  .card-body{padding:11px 11px 13px}
+  .card-title{
+    margin:0;
+    min-height:40px;
+    color:#fff;
+    font-size:13px;
+    line-height:1.35;
+    font-weight:800;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  }
+  .card-meta{margin-top:8px;display:flex;justify-content:space-between;gap:7px;color:var(--muted);font-size:11px}
+  .rating{color:#ffe177;font-weight:800}
+
+  .status-box{
+    border:1px dashed rgba(255,255,255,.18);
+    border-radius:18px;
+    min-height:170px;
+    display:grid;
+    place-items:center;
+    text-align:center;
+    padding:24px;
+    color:var(--muted);
+    background:rgba(255,255,255,.02);
+  }
+  .loader{
+    width:36px;height:36px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.12);border-top-color:var(--accent);
+    animation:spin .8s linear infinite;margin:0 auto 12px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .pagination{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:7px;
+    flex-wrap:wrap;
+    margin:34px 0 0;
+  }
+  .page-btn{
+    min-width:42px;height:42px;padding:0 12px;
+    border:1px solid var(--line);
+    border-radius:11px;
+    background:#10131a;
+    color:var(--text);
+    cursor:pointer;
+    font-weight:800;
+  }
+  .page-btn:hover,.page-btn.active{background:var(--accent);border-color:var(--accent);color:#111}
+  .page-btn[disabled]{opacity:.38;cursor:not-allowed}
+
+  .modal{
+    position:fixed;inset:0;z-index:9999;
+    display:none;
+    background:rgba(1,2,4,.88);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    padding:18px;
+    overflow:auto;
+  }
+  .modal.show{display:block}
+  .modal-shell{
+    width:min(1480px,100%);
+    margin:16px auto;
+    border:1px solid rgba(255,255,255,.13);
+    border-radius:24px;
+    overflow:hidden;
+    background:#0a0c10;
+    box-shadow:0 30px 100px rgba(0,0,0,.65);
+  }
+  .modal-topbar{
+    position:sticky;top:0;z-index:8;
+    min-height:58px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:10px 14px 10px 20px;
+    background:rgba(10,12,16,.94);
+    backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--line);
+  }
+  .modal-heading{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .close-btn{
+    width:40px;height:40px;border:0;border-radius:50%;
+    background:var(--accent);color:#111;font-size:25px;line-height:1;cursor:pointer;font-weight:900;
+  }
+  .detail{padding:22px}
+  .detail-hero{
+    display:grid;
+    grid-template-columns:minmax(190px,280px) minmax(0,1fr);
+    gap:28px;
+    align-items:start;
+  }
+  .detail-poster{
+    width:100%;aspect-ratio:2/3;object-fit:cover;display:block;border-radius:18px;
+    border:1px solid var(--line);background:#101218;box-shadow:var(--shadow);
+  }
+  .detail-title{margin:4px 0 8px;font-size:clamp(28px,4vw,58px);line-height:1;letter-spacing:-.04em}
+  .original-title{color:var(--muted);font-size:14px;margin-top:8px}
+  .fact-row{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+  .fact-chip{padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:#11141b;color:#dfe3ea;font-size:12px;font-weight:750}
+  .fact-chip.accent{background:rgba(255,196,0,.11);border-color:rgba(255,196,0,.26);color:#ffe27a}
+  .info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;margin:24px 0}
+  .info-item{padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+  .info-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7f8899;font-weight:900}
+  .info-value{margin-top:5px;color:#eef1f5;line-height:1.45}
+
+  .player-box{margin-top:26px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#000}
+  .player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+  .player-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+  .player-note{padding:9px 12px;color:#8f98a7;font-size:11px;background:#0d0f13;border-top:1px solid var(--line)}
+
+  .detail-section{margin-top:30px}
+  .detail-section h3{margin:0 0 13px;font-size:20px}
+  .credits{display:flex;flex-wrap:wrap;gap:8px}
+  .credit-chip{padding:9px 11px;border-radius:11px;border:1px solid var(--line);background:#11141a;font-size:13px;line-height:1.25}
+  .credit-chip small{display:block;margin-top:3px;color:var(--muted);font-size:10px}
+
+  .season-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .season-btn{
+    border:1px solid var(--line);background:#11141a;color:#fff;
+    border-radius:999px;padding:9px 14px;cursor:pointer;font-weight:800;font-size:12px;
+  }
+  .season-btn.active,.season-btn:hover{background:var(--accent);color:#111;border-color:var(--accent)}
+  .episode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .episode-btn{
+    text-align:left;border:1px solid var(--line);background:#10131a;color:#fff;
+    padding:12px;border-radius:13px;cursor:pointer;min-height:72px;
+  }
+  .episode-btn:hover,.episode-btn.active{border-color:rgba(255,196,0,.55);background:#151922}
+  .episode-number{font-size:10px;color:var(--accent);font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+  .episode-title{margin-top:5px;font-size:13px;font-weight:800;line-height:1.35}
+
+  .footer{
+    border-top:1px solid var(--line);
+    background:#07080a;
+    color:#7f8795;
+    padding:26px 22px;
+    text-align:center;
+    font-size:12px;
+    line-height:1.65;
+  }
+
+  .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+
+  @media(max-width:1100px){
+    .header-inner{grid-template-columns:auto 1fr;gap:10px}
+    .nav{grid-column:1/-1;order:3;justify-content:flex-start;overflow:auto;padding-bottom:2px}
+    .header-search{width:100%;justify-self:end}
+    .detail-hero{grid-template-columns:200px minmax(0,1fr)}
+  }
+  @media(max-width:760px){
+    .header-inner{padding:9px 12px}
+    .brand-name{display:none}
+    .header-search{width:100%}
+    .search-btn{padding:0 12px}
+    .hero{padding:22px 12px 10px}
+    .hero-box{border-radius:20px;padding:28px 20px}
+    .toolbar,.content{padding-left:12px;padding-right:12px}
+    .toolbar select{flex:1;min-width:140px}
+    .movie-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .card-body{padding:8px}
+    .card-title{font-size:12px;min-height:33px}
+    .card-meta{font-size:10px}
+    .modal{padding:0}
+    .modal-shell{margin:0;min-height:100vh;border-radius:0;border-left:0;border-right:0}
+    .detail{padding:14px}
+    .detail-hero{grid-template-columns:120px minmax(0,1fr);gap:15px}
+    .detail-title{font-size:28px}
+    .info-grid{grid-template-columns:1fr}
+    .fact-row{margin:12px 0}
+  }
+  @media(max-width:500px){
+    .movie-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .nav button{padding:8px 10px;font-size:12px}
+    .detail-hero{grid-template-columns:96px minmax(0,1fr)}
+    .detail-title{font-size:24px}
+    .episode-grid{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation-duration:.001ms!important;animation-iteration-count:1!important}}
+  ]]></b:skin>
+</head>
+<body>
+  <header class='app-header'>
+    <div class='header-inner'>
+      <button class='brand' id='brandButton' type='button' aria-label='Pagina principală'>
+        <span class='brand-mark'>▶</span>
+        <span class='brand-name' id='brandName'>Cinema Catalog</span>
+      </button>
+
+      <nav class='nav' aria-label='Navigare principală'>
+        <button data-view='home' type='button'>Noutăți</button>
+        <button data-view='movies' type='button'>Filme</button>
+        <button data-view='tv' type='button'>Seriale</button>
+      </nav>
+
+      <form class='header-search' id='searchForm'>
+        <label class='visually-hidden' for='searchInput'>Caută filme sau seriale</label>
+        <input class='search-field' id='searchInput' autocomplete='off' placeholder='Caută titlu sau IMDb ID...' type='search'/>
+        <button class='search-btn' type='submit'>Caută</button>
+      </form>
+    </div>
+  </header>
+
+  <section class='hero' id='hero'>
+    <div class='hero-box'>
+      <span class='eyebrow'>Catalog actualizat</span>
+      <h1 id='heroTitle'>Filme și seriale într-un catalog rapid și clar.</h1>
+      <p id='heroText'>Catalogul afișează numai datele disponibile în sursele configurate. Titlurile se deschid în modal, iar serialele pot afișa sezoanele și episoadele direct în pagină.</p>
+    </div>
+  </section>
+
+  <section class='toolbar' aria-label='Filtre'>
+    <select id='genreFilter' aria-label='Filtrează după gen'>
+      <option value=''>Toate genurile</option>
+    </select>
+    <select id='yearFilter' aria-label='Filtrează după an'>
+      <option value=''>Toți anii</option>
+    </select>
+    <div class='spacer'></div>
+    <div class='count-text' id='countText'></div>
+  </section>
+
+  <main class='content' id='appMain'>
+    <div class='section-head'>
+      <div>
+        <h2 id='sectionTitle'>Noutăți</h2>
+        <p id='sectionSubtitle'>Titluri recente disponibile la sursa video.</p>
+      </div>
+    </div>
+    <div id='catalogArea'></div>
+    <div class='pagination' id='pagination' aria-label='Paginare'></div>
+  </main>
+
+  <div class='modal' id='detailModal' role='dialog' aria-modal='true' aria-labelledby='modalHeading'>
+    <div class='modal-shell'>
+      <div class='modal-topbar'>
+        <div class='modal-heading' id='modalHeading'>Detalii</div>
+        <button class='close-btn' id='closeModalButton' type='button' aria-label='Închide'>&#215;</button>
+      </div>
+      <div class='detail' id='detailContent'></div>
+    </div>
+  </div>
+
+  <b:section id='main' showaddelement='yes'>
+    <b:widget id='HTML1' locked='false' title='' type='HTML' version='1'>
+      <b:includable id='main'><div/></b:includable>
+    </b:widget>
+  </b:section>
+
+  <footer class='footer'>
+    <div id='footerText'>Datele afișate provin din sursele configurate de administratorul site-ului. Nu sunt generate descrieri sau informații factuale inexistente în surse.</div>
+  </footer>
+
+<script type='text/javascript'>
+//<![CDATA[
+(function(){
+  'use strict';
+
+  /*
+   * CONFIGURARE OBLIGATORIE
+   * 1) Publică folderul /data generat de pachetul GitHub inclus.
+   * 2) Înlocuiește DATA_BASE_URL cu URL-ul real al folderului /data.
+   * Date configurate: https://bebe2007.github.io/filme/data
+   */
+  var CONFIG = {
+    SITE_NAME: 'Cinema Catalog',
+    DATA_BASE_URL: 'https://bebe2007.github.io/filme/data',
+    PROVIDER_BASE_URL: 'https://vsembed.ru',
+    POSTER_BASE_URL: 'https://images.metahub.space/poster/medium/',
+    ITEMS_PER_PAGE: 80,
+    DEFAULT_SUBTITLE_LANG: 'ro',
+    ENABLE_PROVIDER_INFO: true
+  };
+
+  var state = {
+    view: 'home',
+    page: 1,
+    genre: '',
+    year: '',
+    q: '',
+    meta: null,
+    totalPages: 1,
+    totalItems: 0,
+    modalId: '',
+    modalType: ''
+  };
+
+  var els = {
+    brandButton: document.getElementById('brandButton'),
+    brandName: document.getElementById('brandName'),
+    navButtons: Array.prototype.slice.call(document.querySelectorAll('.nav [data-view]')),
+    searchForm: document.getElementById('searchForm'),
+    searchInput: document.getElementById('searchInput'),
+    genreFilter: document.getElementById('genreFilter'),
+    yearFilter: document.getElementById('yearFilter'),
+    countText: document.getElementById('countText'),
+    sectionTitle: document.getElementById('sectionTitle'),
+    sectionSubtitle: document.getElementById('sectionSubtitle'),
+    catalogArea: document.getElementById('catalogArea'),
+    pagination: document.getElementById('pagination'),
+    detailModal: document.getElementById('detailModal'),
+    detailContent: document.getElementById('detailContent'),
+    modalHeading: document.getElementById('modalHeading'),
+    closeModalButton: document.getElementById('closeModalButton')
+  };
+
+  var FALLBACK_POSTER = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"><rect width="400" height="600" fill="#11141a"/><text x="200" y="285" text-anchor="middle" font-family="Arial" font-size="26" fill="#778091">Poster</text><text x="200" y="322" text-anchor="middle" font-family="Arial" font-size="16" fill="#596170">indisponibil</text></svg>'
+  );
+
+  function esc(value){
+    return String(value == null ? '' : value)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function slug(value){
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+
+  function normalizeSearch(value){
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,' ').trim();
+  }
+
+  function fetchJSON(url){
+    return fetch(url,{cache:'no-store'}).then(function(r){
+      if(!r.ok){throw new Error('HTTP '+r.status+' pentru '+url);}
+      return r.json();
+    });
+  }
+
+  function dataUrl(path){
+    return CONFIG.DATA_BASE_URL.replace(/\/$/,'') + '/' + path.replace(/^\//,'');
+  }
+
+  function providerUrl(path){
+    return CONFIG.PROVIDER_BASE_URL.replace(/\/$/,'') + '/' + path.replace(/^\//,'');
+  }
+
+  function posterFor(item){
+    if(item && item.poster){return item.poster;}
+    if(item && item.imdb_id){return CONFIG.POSTER_BASE_URL + encodeURIComponent(item.imdb_id) + '/img';}
+    return FALLBACK_POSTER;
+  }
+
+  function withPosterFallback(img){
+    img.onerror = function(){
+      img.onerror = null;
+      img.src = FALLBACK_POSTER;
+    };
+  }
+
+  function setLoading(message){
+    els.catalogArea.innerHTML = '<div class="status-box"><div><div class="loader"></div><div>'+esc(message || 'Se încarcă...')+'</div></div></div>';
+    els.pagination.innerHTML = '';
+    els.countText.textContent = '';
+  }
+
+  function setError(message){
+    els.catalogArea.innerHTML = '<div class="status-box"><div><strong>Catalogul nu a putut fi încărcat.</strong><br/><br/>'+esc(message)+'</div></div>';
+    els.pagination.innerHTML = '';
+  }
+
+  function itemTypeLabel(type){return type === 'tv' ? 'Serial' : 'Film';}
+
+  function renderCards(items){
+    if(!items || !items.length){
+      els.catalogArea.innerHTML = '<div class="status-box">Nu există rezultate pentru selecția curentă.</div>';
+      return;
+    }
+    var html = '<div class="movie-grid">';
+    items.forEach(function(item){
+      var title = item.title || item.primary_title || item.imdb_id || 'Titlu indisponibil';
+      var type = item.type === 'tv' ? 'tv' : 'movie';
+      var year = item.year || '';
+      var rating = item.rating != null && item.rating !== '' ? Number(item.rating).toFixed(1) : '';
+      var quality = item.quality || '';
+      html += '<article class="movie-card" tabindex="0" data-id="'+esc(item.imdb_id)+'" data-type="'+type+'" aria-label="Deschide '+esc(title)+'">';
+      html += '<div class="poster-wrap"><img loading="lazy" alt="'+esc(title)+'" src="'+esc(posterFor(item))+'"/>';
+      html += '<div class="badges"><span class="badge">'+itemTypeLabel(type)+'</span>'+(quality?'<span class="badge quality">'+esc(quality)+'</span>':'')+'</div></div>';
+      html += '<div class="card-body"><h3 class="card-title">'+esc(title)+'</h3><div class="card-meta"><span>'+esc(year)+'</span><span class="rating">'+(rating?'★ '+esc(rating):'')+'</span></div></div>';
+      html += '</article>';
+    });
+    html += '</div>';
+    els.catalogArea.innerHTML = html;
+    Array.prototype.forEach.call(els.catalogArea.querySelectorAll('.movie-card img'),withPosterFallback);
+    Array.prototype.forEach.call(els.catalogArea.querySelectorAll('.movie-card'),function(card){
+      function open(){openTitle(card.getAttribute('data-id'),card.getAttribute('data-type'),true);}
+      card.addEventListener('click',open);
+      card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+    });
+  }
+
+  function renderPagination(page,pages){
+    pages = Math.max(1,Number(pages)||1);
+    page = Math.min(Math.max(1,Number(page)||1),pages);
+    if(pages <= 1){els.pagination.innerHTML='';return;}
+    var start = Math.max(1,page-3), end = Math.min(pages,page+3), html='';
+    html += '<button class="page-btn" data-page="'+(page-1)+'" '+(page<=1?'disabled="disabled"':'')+' aria-label="Pagina precedentă">‹</button>';
+    if(start>1){html += pageButton(1,page); if(start>2){html += '<span class="count-text">…</span>';}}
+    for(var p=start;p<=end;p++){html += pageButton(p,page);}
+    if(end<pages){if(end<pages-1){html += '<span class="count-text">…</span>';} html += pageButton(pages,page);}
+    html += '<button class="page-btn" data-page="'+(page+1)+'" '+(page>=pages?'disabled="disabled"':'')+' aria-label="Pagina următoare">›</button>';
+    els.pagination.innerHTML=html;
+    Array.prototype.forEach.call(els.pagination.querySelectorAll('[data-page]'),function(btn){
+      btn.addEventListener('click',function(){var p=Number(btn.getAttribute('data-page'));if(p>=1&&p<=pages){navigate({page:p});window.scrollTo({top:0,behavior:'smooth'});}});
+    });
+  }
+
+  function pageButton(p,current){return '<button class="page-btn '+(p===current?'active':'')+'" data-page="'+p+'" aria-label="Pagina '+p+'">'+p+'</button>';}
+
+  function updateNav(){
+    els.navButtons.forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-view')===state.view);});
+    els.genreFilter.value = state.genre || '';
+    els.yearFilter.value = state.year || '';
+    if(state.q && document.activeElement !== els.searchInput){els.searchInput.value=state.q;}
+  }
+
+  function updateHeading(){
+    var title='Noutăți', sub='Titluri recente disponibile la sursa video.';
+    if(state.q){title='Rezultate pentru „'+state.q+'”';sub='Căutare în indexul publicat al catalogului.';}
+    else if(state.genre){title='Gen: '+state.genre;sub='Titluri din genul selectat.';}
+    else if(state.year){title='An: '+state.year;sub='Titluri cu anul de apariție selectat.';}
+    else if(state.view==='movies'){title='Filme';sub='Catalogul filmelor disponibile.';}
+    else if(state.view==='tv'){title='Seriale';sub='Catalogul serialelor disponibile.';}
+    els.sectionTitle.textContent=title;
+    els.sectionSubtitle.textContent=sub;
+  }
+
+  function catalogPath(){
+    if(state.genre){return 'genres/'+slug(state.genre)+'/page-'+state.page+'.json';}
+    if(state.year){return 'years/'+encodeURIComponent(state.year)+'/page-'+state.page+'.json';}
+    if(state.view==='tv'){return 'tv/page-'+state.page+'.json';}
+    return 'movies/page-'+state.page+'.json';
+  }
+
+  function loadHome(){
+    setLoading('Se încarcă titlurile recente...');
+    Promise.all([
+      fetchJSON(providerUrl('movies/latest/page-1.json')),
+      fetchJSON(providerUrl('tvshows/latest/page-1.json'))
+    ]).then(function(parts){
+      var movies=(parts[0]&&parts[0].result?parts[0].result:[]).filter(function(x){return /^tt\d{5,12}$/i.test(String(x.imdb_id||''));}).slice(0,40).map(function(x){x.type='movie';return x;});
+      var tv=(parts[1]&&parts[1].result?parts[1].result:[]).filter(function(x){return /^tt\d{5,12}$/i.test(String(x.imdb_id||''));}).slice(0,40).map(function(x){x.type='tv';return x;});
+      var items=[];
+      for(var i=0;i<40;i++){if(movies[i])items.push(movies[i]);if(tv[i])items.push(tv[i]);}
+      state.totalItems=items.length;state.totalPages=1;
+      els.countText.textContent=items.length+' titluri';
+      renderCards(items);
+      renderPagination(1,1);
+    }).catch(function(err){setError(err.message);});
+  }
+
+  function searchBucket(query){
+    var n=normalizeSearch(query);
+    if(/^tt\d{5,12}$/.test(n.replace(/\s/g,''))){return null;}
+    var chars=n.replace(/\s/g,'');
+    return (chars.slice(0,2)||'__').padEnd(2,'_');
+  }
+
+  function loadSearch(){
+    var q=state.q.trim();
+    if(!q){state.q='';loadCurrent();return;}
+    var normalized=normalizeSearch(q).replace(/\s/g,'');
+    if(/^tt\d{5,12}$/.test(normalized)){
+      openTitle(normalized,'movie',true,true);
+      state.totalItems=1;state.totalPages=1;
+      renderCards([{imdb_id:normalized,title:normalized,type:'movie'}]);
+      return;
+    }
+    if(normalizeSearch(q).length<2){setError('Introdu minimum două caractere pentru căutare.');return;}
+    setLoading('Se caută...');
+    var bucket=searchBucket(q);
+    fetchJSON(dataUrl('search/'+bucket+'.json')).then(function(data){
+      var needle=normalizeSearch(q);
+      var all=(data.items||data||[]).filter(function(item){
+        var hay=[item.title,item.original_title,item.romanian_title].concat(item.akas||[]).map(normalizeSearch).join(' | ');
+        return hay.indexOf(needle)!==-1 || String(item.imdb_id||'').toLowerCase()===q.toLowerCase();
+      });
+      var total=all.length, pages=Math.max(1,Math.ceil(total/CONFIG.ITEMS_PER_PAGE));
+      if(state.page>pages){state.page=pages;}
+      var start=(state.page-1)*CONFIG.ITEMS_PER_PAGE;
+      var items=all.slice(start,start+CONFIG.ITEMS_PER_PAGE);
+      state.totalItems=total;state.totalPages=pages;
+      els.countText.textContent=total+' rezultate';
+      renderCards(items);renderPagination(state.page,pages);
+    }).catch(function(err){setError(err.message);});
+  }
+
+  function loadCatalog(){
+    setLoading('Se încarcă pagina '+state.page+'...');
+    fetchJSON(dataUrl(catalogPath())).then(function(data){
+      state.totalPages=Number(data.pages||1);state.totalItems=Number(data.total||0);
+      els.countText.textContent=(state.totalItems?state.totalItems+' titluri':'');
+      renderCards(data.items||[]);renderPagination(Number(data.page||state.page),state.totalPages);
+    }).catch(function(err){setError(err.message);});
+  }
+
+  function loadCurrent(){
+    updateNav();updateHeading();
+    if(state.q){loadSearch();return;}
+    if(state.view==='home'&&!state.genre&&!state.year){loadHome();return;}
+    loadCatalog();
+  }
+
+  function buildQuery(overrides){
+    var next={view:state.view,page:state.page,genre:state.genre,year:state.year,q:state.q};
+    Object.keys(overrides||{}).forEach(function(k){next[k]=overrides[k];});
+    var p=new URLSearchParams();
+    if(next.view&&next.view!=='home')p.set('view',next.view);
+    if(next.page&&Number(next.page)>1)p.set('page',next.page);
+    if(next.genre)p.set('genre',next.genre);
+    if(next.year)p.set('year',next.year);
+    if(next.q)p.set('q',next.q);
+    if(state.modalId){p.set('id',state.modalId);p.set('type',state.modalType||'movie');}
+    var s=p.toString();return location.pathname+(s?'?'+s:'');
+  }
+
+  function navigate(changes,replace){
+    changes=changes||{};
+    if(Object.prototype.hasOwnProperty.call(changes,'view')){state.view=changes.view||'home';state.genre='';state.year='';state.q='';state.page=1;}
+    if(Object.prototype.hasOwnProperty.call(changes,'genre')){state.genre=changes.genre||'';state.year='';state.q='';state.page=1;if(state.genre&&state.view==='home')state.view='movies';}
+    if(Object.prototype.hasOwnProperty.call(changes,'year')){state.year=changes.year||'';state.genre='';state.q='';state.page=1;if(state.year&&state.view==='home')state.view='movies';}
+    if(Object.prototype.hasOwnProperty.call(changes,'q')){state.q=changes.q||'';state.genre='';state.year='';state.page=1;}
+    if(Object.prototype.hasOwnProperty.call(changes,'page')){state.page=Math.max(1,Number(changes.page)||1);}
+    var url=buildQuery({});
+    history[replace?'replaceState':'pushState']({},'',url);
+    loadCurrent();
+  }
+
+  function parseLocation(){
+    var p=new URLSearchParams(location.search);
+    state.view=p.get('view')||'home';
+    state.page=Math.max(1,Number(p.get('page')||1));
+    state.genre=p.get('genre')||'';
+    state.year=p.get('year')||'';
+    state.q=p.get('q')||'';
+    state.modalId=p.get('id')||'';
+    state.modalType=p.get('type')||'movie';
+    if(state.genre||state.year){if(state.view==='home')state.view='movies';}
+    els.searchInput.value=state.q;
+  }
+
+  function loadMeta(){
+    return fetchJSON(dataUrl('meta.json')).then(function(meta){
+      state.meta=meta;
+      var genres=(meta.genres||[]).slice().sort(function(a,b){return String(a).localeCompare(String(b));});
+      var years=(meta.years||[]).slice().sort(function(a,b){return Number(b)-Number(a);});
+      genres.forEach(function(g){var o=document.createElement('option');o.value=g;o.textContent=g;els.genreFilter.appendChild(o);});
+      years.forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;els.yearFilter.appendChild(o);});
+      updateNav();
+      return meta;
+    }).catch(function(){return null;});
+  }
+
+  function titleShard(id){return id.slice(0,6).toLowerCase()+'.json';}
+
+  function fetchTitleData(id,type){
+    var local=fetchJSON(dataUrl('title-shards/'+titleShard(id))).then(function(shard){
+      var item=shard[id] || (shard.items&&shard.items[id]) || null;
+      if(!item){throw new Error('Titlul nu există în shard.');}
+      return item;
+    });
+    if(!CONFIG.ENABLE_PROVIDER_INFO){return local.then(function(item){return {local:item,provider:null};});}
+    var infoPath=type==='tv'?'info/tv/'+encodeURIComponent(id)+'.json':'info/movie/'+encodeURIComponent(id)+'.json';
+    var provider=fetchJSON(providerUrl(infoPath)).catch(function(){return null;});
+    return Promise.all([local.catch(function(){return null;}),provider]).then(function(pair){
+      if(!pair[0]&&!pair[1]){throw new Error('Nu există informații disponibile pentru '+id+'.');}
+      return {local:pair[0],provider:pair[1]};
+    });
+  }
+
+  function mergeTitleData(id,type,pair){
+    var a=pair.local||{},b=pair.provider||{};
+    return {
+      imdb_id:id,
+      type:(a.type||b.type||type)==='tv'?'tv':'movie',
+      title:a.title||a.romanian_title||b.title||id,
+      romanian_title:a.romanian_title||'',
+      original_title:a.original_title||'',
+      year:a.year||b.year||'',
+      end_year:a.end_year||'',
+      runtime:a.runtime||'',
+      genres:a.genres||[],
+      rating:a.rating!=null?a.rating:(b.imdb_rating!=null?b.imdb_rating:''),
+      votes:a.votes||'',
+      quality:b.quality||a.quality||'',
+      tmdb_id:b.tmdb_id||a.tmdb_id||'',
+      poster:b.poster||a.poster||posterFor({imdb_id:id}),
+      time_added:b.time_added||a.time_added||'',
+      directors:a.directors||[],
+      writers:a.writers||[],
+      cast:a.cast||[],
+      credits:a.credits||[],
+      seasons:a.seasons||(b.seasons||[]),
+      total_episodes:b.total_episodes||a.total_episodes||''
+    };
+  }
+
+  function fact(label,value){return value?'<div class="info-item"><div class="info-label">'+esc(label)+'</div><div class="info-value">'+esc(value)+'</div></div>':'';}
+  function joinNames(arr){return (arr||[]).map(function(x){return typeof x==='string'?x:(x.name||'');}).filter(Boolean).join(', ');}
+
+  function playerSrc(item,season,episode){
+    var base=CONFIG.PROVIDER_BASE_URL.replace(/\/$/,'');
+    var src=base+(item.type==='tv'?'/embed/tv/':'/embed/movie/')+encodeURIComponent(item.imdb_id);
+    if(item.type==='tv'&&season&&episode){src+='/'+encodeURIComponent(season)+'/'+encodeURIComponent(episode);}
+    var params=[];
+    if(CONFIG.DEFAULT_SUBTITLE_LANG){params.push('ds_lang='+encodeURIComponent(CONFIG.DEFAULT_SUBTITLE_LANG));}
+    if(item.type==='tv'){params.push('autonext=1');}
+    return src+(params.length?'?'+params.join('&'):'');
+  }
+
+  function renderCredits(title,items){
+    items=items||[];if(!items.length)return '';
+    var html='<section class="detail-section"><h3>'+esc(title)+'</h3><div class="credits">';
+    items.forEach(function(x){
+      var name=typeof x==='string'?x:(x.name||'');if(!name)return;
+      var sub='';
+      if(typeof x==='object'){
+        if(x.characters&&x.characters.length){sub=x.characters.join(', ');}else if(x.category){sub=x.category;}
+      }
+      html+='<div class="credit-chip">'+esc(name)+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>';
+    });
+    return html+'</div></section>';
+  }
+
+  function renderSeasons(item){
+    if(item.type!=='tv'||!item.seasons||!item.seasons.length)return '';
+    var html='<section class="detail-section"><h3>Sezoane și episoade</h3><div class="season-tabs" id="seasonTabs">';
+    item.seasons.forEach(function(s,idx){html+='<button class="season-btn '+(idx===0?'active':'')+'" type="button" data-season="'+esc(s.season)+'">Sezonul '+esc(s.season)+'</button>';});
+    html+='</div><div id="episodeContainer"></div></section>';
+    return html;
+  }
+
+  function seasonEpisodes(item,season){
+    var s=(item.seasons||[]).filter(function(x){return String(x.season)===String(season);})[0];
+    if(!s)return [];
+    if(Array.isArray(s.episodes_data)&&s.episodes_data.length){return s.episodes_data;}
+    var first=Number(s.first_episode||1), last=Number(s.last_episode||s.episodes||0), out=[];
+    for(var i=first;i<=last;i++){out.push({episode:i,title:'Episodul '+i});}
+    return out;
+  }
+
+  function renderEpisodeList(item,season){
+    var target=document.getElementById('episodeContainer');if(!target)return;
+    var eps=seasonEpisodes(item,season);
+    if(!eps.length){target.innerHTML='<div class="status-box">Nu există episoade confirmate pentru acest sezon în datele disponibile.</div>';return;}
+    var html='<div class="episode-grid">';
+    eps.forEach(function(ep){
+      var t=ep.title||('Episodul '+ep.episode);
+      html+='<button class="episode-btn" type="button" data-season="'+esc(season)+'" data-episode="'+esc(ep.episode)+'"><span class="episode-number">S'+esc(season)+' · E'+esc(ep.episode)+'</span><div class="episode-title">'+esc(t)+'</div></button>';
+    });
+    html+='</div>';target.innerHTML=html;
+    Array.prototype.forEach.call(target.querySelectorAll('.episode-btn'),function(btn){
+      btn.addEventListener('click',function(){
+        var s=btn.getAttribute('data-season'),e=btn.getAttribute('data-episode');
+        Array.prototype.forEach.call(target.querySelectorAll('.episode-btn'),function(x){x.classList.remove('active');});btn.classList.add('active');
+        var frame=document.getElementById('movieFrame');if(frame){frame.src=playerSrc(item,s,e);frame.scrollIntoView({behavior:'smooth',block:'center'});}
+      });
+    });
+  }
+
+  function renderTitle(item){
+    els.modalHeading.textContent=item.title||item.imdb_id;
+    var rating=item.rating!==''&&item.rating!=null?Number(item.rating).toFixed(1):'';
+    var facts=[];
+    if(item.year){facts.push('<span class="fact-chip">'+esc(item.year+(item.end_year?'–'+item.end_year:''))+'</span>');}
+    if(item.runtime){facts.push('<span class="fact-chip">'+esc(item.runtime)+' min</span>');}
+    (item.genres||[]).forEach(function(g){facts.push('<span class="fact-chip">'+esc(g)+'</span>');});
+    if(rating){facts.push('<span class="fact-chip accent">IMDb '+esc(rating)+'</span>');}
+    if(item.quality){facts.push('<span class="fact-chip accent">'+esc(item.quality)+'</span>');}
+
+    var title=item.romanian_title||item.title||item.imdb_id;
+    var original=(item.original_title&&item.original_title!==title)?item.original_title:'';
+    var html='<div class="detail-hero">';
+    html+='<div><img class="detail-poster" id="detailPoster" alt="'+esc(title)+'" src="'+esc(item.poster||posterFor(item))+'"/></div>';
+    html+='<div><h1 class="detail-title">'+esc(title)+'</h1>'+(original?'<div class="original-title">Titlu original: '+esc(original)+'</div>':'')+'<div class="fact-row">'+facts.join('')+'</div>';
+    html+='<div class="info-grid">'+fact('IMDb ID',item.imdb_id)+fact('TMDB ID',item.tmdb_id)+fact('Regie',joinNames(item.directors))+fact('Scenariu',joinNames(item.writers))+fact('Voturi IMDb',item.votes?Number(item.votes).toLocaleString('ro-RO'):'')+fact('Adăugat la sursa video',item.time_added)+fact('Episoade disponibile',item.total_episodes)+'</div>';
+    html+='</div></div>';
+    html+='<div class="player-box"><div class="player-wrap"><iframe id="movieFrame" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen="allowfullscreen" referrerpolicy="origin" src="'+esc(playerSrc(item))+'"></iframe></div><div class="player-note">Limba preferată pentru subtitrare este româna. Playerul o selectează numai dacă există o pistă disponibilă.</div></div>';
+    html+=renderCredits('Distribuție principală',item.cast);
+    html+=renderCredits('Alte credite principale',item.credits);
+    html+=renderSeasons(item);
+    els.detailContent.innerHTML=html;
+    var poster=document.getElementById('detailPoster');if(poster)withPosterFallback(poster);
+    if(item.type==='tv'&&item.seasons&&item.seasons.length){
+      var tabs=Array.prototype.slice.call(document.querySelectorAll('#seasonTabs .season-btn'));
+      tabs.forEach(function(btn){btn.addEventListener('click',function(){tabs.forEach(function(x){x.classList.remove('active');});btn.classList.add('active');renderEpisodeList(item,btn.getAttribute('data-season'));});});
+      renderEpisodeList(item,item.seasons[0].season);
+    }
+  }
+
+  function openTitle(id,type,push,fromSearch){
+    if(!/^tt\d{5,12}$/i.test(String(id||''))){return;}
+    id=String(id).toLowerCase();type=type==='tv'?'tv':'movie';
+    state.modalId=id;state.modalType=type;
+    if(push){
+      var p=new URLSearchParams(location.search);p.set('id',id);p.set('type',type);
+      history.pushState({},'',location.pathname+'?'+p.toString());
+    }
+    els.detailModal.classList.add('show');document.body.classList.add('modal-open');
+    els.detailContent.innerHTML='<div class="status-box"><div><div class="loader"></div>Se încarcă informațiile...</div></div>';
+    fetchTitleData(id,type).then(function(pair){var item=mergeTitleData(id,type,pair);renderTitle(item);}).catch(function(err){els.detailContent.innerHTML='<div class="status-box">'+esc(err.message)+'</div>';});
+    if(fromSearch){/* păstrăm catalogul curent vizibil în fundal */}
+  }
+
+  function closeModal(push){
+    var frame=document.getElementById('movieFrame');if(frame){frame.src='about:blank';}
+    els.detailModal.classList.remove('show');document.body.classList.remove('modal-open');
+    state.modalId='';state.modalType='';
+    if(push!==false){var p=new URLSearchParams(location.search);p.delete('id');p.delete('type');var s=p.toString();history.pushState({},'',location.pathname+(s?'?'+s:''));}
+  }
+
+  function bind(){
+    els.brandName.textContent=CONFIG.SITE_NAME;
+    els.brandButton.addEventListener('click',function(){closeModal(false);navigate({view:'home'});});
+    els.navButtons.forEach(function(btn){btn.addEventListener('click',function(){closeModal(false);navigate({view:btn.getAttribute('data-view')});});});
+    els.searchForm.addEventListener('submit',function(e){e.preventDefault();closeModal(false);navigate({q:els.searchInput.value.trim()});});
+    els.genreFilter.addEventListener('change',function(){closeModal(false);navigate({genre:this.value});});
+    els.yearFilter.addEventListener('change',function(){closeModal(false);navigate({year:this.value});});
+    els.closeModalButton.addEventListener('click',function(){closeModal(true);});
+    els.detailModal.addEventListener('click',function(e){if(e.target===els.detailModal){closeModal(true);}});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&els.detailModal.classList.contains('show')){closeModal(true);}});
+    window.addEventListener('popstate',function(){
+      var wasOpen=els.detailModal.classList.contains('show');parseLocation();loadCurrent();
+      if(state.modalId){openTitle(state.modalId,state.modalType,false);}else if(wasOpen){closeModal(false);}
+    });
+  }
+
+  function boot(){
+    parseLocation();bind();
+    loadMeta().finally(function(){loadCurrent();if(state.modalId){openTitle(state.modalId,state.modalType,false);}});
+  }
+
+  boot();
+})();
+//]]>
+</script>
+</body>
+</html>
