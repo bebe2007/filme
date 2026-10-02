@@ -1,6 +1,11 @@
 name: Build movie catalog data
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_catalog.py'
+      - '.github/workflows/update-catalog.yml'
   workflow_dispatch:
   schedule:
     - cron: '15 3 * * *'
