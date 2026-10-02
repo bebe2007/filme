@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: pages-catalog
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -36,6 +36,12 @@ jobs:
         run: |
           python scripts/build_catalog.py --out public/data --work .catalog-work --page-size 70
           touch public/.nojekyll
+
+      - name: Preserve existing GitHub Pages player site
+        run: |
+          cp index.html public/index.html
+          if [ -d actori ]; then cp -R actori public/actori; fi
+          if [ -d seriale ]; then cp -R seriale public/seriale; fi
 
       - name: Verify generated catalog
         run: |
