@@ -1,0 +1,64 @@
+name: Recover movie catalog deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-catalog.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current player site
+        uses: actions/checkout@v6
+
+      - name: Download last verified catalog artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: github-pages
+          path: previous-artifact
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 37018903438
+
+      - name: Restore catalog and preserve player
+        run: |
+          mkdir -p public
+          tar -xf previous-artifact/artifact.tar -C public
+          cp index.html public/index.html
+          if [ -d actori ]; then cp -R actori public/actori; fi
+          if [ -d seriale ]; then cp -R seriale public/seriale; fi
+          touch public/.nojekyll
+          test -s public/data/meta.json
+          test -s public/data/movies/page-1.json
+          test -s public/data/tv/page-1.json
+
+      - name: Wait for legacy Pages deployment to finish
+        run: sleep 90
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload recovered Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy recovered catalog
+        id: deployment
+        uses: actions/deploy-pages@v4
