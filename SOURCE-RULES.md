@@ -9,3 +9,5 @@
 7. Titlul românesc este completat numai din AKA-uri cu regiune/limbă românească.
 8. Calitatea, posterul providerului și `time_added` sunt preluate din endpointul `/info/...` atunci când acesta le furnizează.
 9. Tema nu inventează descrieri sau valori lipsă.
+10. Datele editoriale suplimentare ale paginii publice (descriere, poster alternativ, fundal și trailer) pot fi rezolvate după IMDb ID din Cinemeta/Stremio și cache-uite local de site. Aceste date nu decid apartenența titlului la catalog și nu înlocuiesc valorile IMDb existente.
+11. Dacă sursa editorială nu furnizează un câmp, site-ul nu inventează sinopsis, trailer, poster sau altă informație lipsă.
