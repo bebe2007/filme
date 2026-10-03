@@ -3,18 +3,35 @@
     "description": "Override-uri editoriale proprii pentru filme.bratu-marian.com. Cheia este IMDb ID-ul.",
     "allowed_fields": [
       "description",
+      "tagline",
       "poster",
       "background",
       "trailer_youtube",
       "country",
       "language",
-      "released"
+      "released",
+      "age_rating",
+      "source_url",
+      "trailer_source_url"
     ],
     "example": {
       "tt0000000": {
-        "description": "Descriere editorială în limba română.",
-        "trailer_youtube": "YouTubeVideoId"
+        "description": "Descriere editorială verificată în limba română.",
+        "tagline": "Un subtitlu editorial scurt.",
+        "trailer_youtube": "YouTubeVideoId",
+        "source_url": "https://exemplu.ro/sursa",
+        "trailer_source_url": "https://www.youtube.com/watch?v=..."
       }
     }
+  },
+  "tt8316986": {
+    "description": "Gary și Ell pornesc de la o întâlnire aparent obișnuită, dar noaptea lor se transformă rapid într-un șir de decizii tot mai riscante după ce ajung să fure mașina unui criminal. În portbagaj descoperă un cadavru, iar alături de el o sumă importantă de bani. Fără o cale simplă de a cere ajutor și cu un ucigaș pe urmele lor, cei doi încearcă să înțeleagă ce s-a întâmplat, ajungând într-o poveste despre șantaj, trădare, alegeri greșite și adevăruri care ies la iveală pe parcursul unei singure nopți.",
+    "tagline": "O întâlnire pe nevăzute. O mașină furată. O noapte în care fiecare alegere complică totul.",
+    "trailer_youtube": "3HmV37lxfbc",
+    "country": "Canada, Regatul Unit",
+    "language": "Engleză",
+    "released": "2026-08-14",
+    "source_url": "https://www.primevideo.com/-/ro/detail/0IL8CY0NT9UL2RO79IQU28S6IV",
+    "trailer_source_url": "https://www.youtube.com/watch?v=3HmV37lxfbc"
   }
 }
