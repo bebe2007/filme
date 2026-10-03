@@ -524,6 +524,112 @@ def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> No
         if idx%500==0: log(f"  shards: {idx:,}/{len(groups):,}")
 
 
+
+def build_people_index(con: sqlite3.Connection, out: Path) -> None:
+    """Build reverse person -> available catalog credits shards.
+
+    The public site can open an actor/director/writer page without scanning the full
+    title catalog. Credits are limited to titles already present in the provider-backed
+    catalog and are split by IMDb nconst prefix for efficient delivery.
+    """
+    log("Construiesc indexul invers pentru actori, regizori și scenariști")
+    query = """
+        SELECT p.nconst,n.name,n.birth_year,n.death_year,n.professions,
+               t.imdb_id,t.type,t.title,t.original_title,t.romanian_title,
+               t.year,t.rating,t.votes,t.genres,'actor' AS role
+          FROM principals p
+          JOIN titles t ON t.imdb_id=p.imdb_id
+          LEFT JOIN people n ON n.nconst=p.nconst
+         WHERE p.category IN ('actor','actress','self','archive_footage','archive_sound')
+        UNION ALL
+        SELECT c.nconst,n.name,n.birth_year,n.death_year,n.professions,
+               t.imdb_id,t.type,t.title,t.original_title,t.romanian_title,
+               t.year,t.rating,t.votes,t.genres,
+               CASE WHEN c.role='director' THEN 'regizor' ELSE 'scenarist' END AS role
+          FROM crew c
+          JOIN titles t ON t.imdb_id=c.imdb_id
+          LEFT JOIN people n ON n.nconst=c.nconst
+         WHERE c.role IN ('director','writer')
+        ORDER BY 1,15,11 DESC,6
+    """
+
+    people_dir = out / 'person-shards'
+    people_dir.mkdir(parents=True, exist_ok=True)
+    current_n = None
+    current = None
+    seen = None
+    shard_prefix = None
+    shard = {}
+    people_count = 0
+    credit_count = 0
+
+    def compact_card(row):
+        imdb_id, typ, title, original, ro_title, year, rating, votes, genres = row
+        display = ro_title or title or imdb_id
+        return {
+            "imdb_id": imdb_id,
+            "type": typ,
+            "title": display,
+            "original_title": original if original and original != display else None,
+            "romanian_title": ro_title,
+            "year": year,
+            "rating": rating,
+            "votes": votes,
+            "genres": genres.split(",") if genres else [],
+        }
+
+    def flush_person():
+        nonlocal current_n, current, seen, people_count
+        if current_n and current is not None:
+            current["roles"] = {k:v for k,v in current["roles"].items() if v}
+            if current["roles"]:
+                shard[current_n] = current
+                people_count += 1
+
+    def flush_shard():
+        if shard_prefix is not None and shard:
+            write_json(people_dir / f"{shard_prefix}.json", shard)
+
+    for row in con.execute(query):
+        nconst,name,birth_year,death_year,professions,imdb_id,typ,title,original,ro_title,year,rating,votes,genres,role = row
+        if not nconst:
+            continue
+        if nconst != current_n:
+            old_prefix = current_n[:5] if current_n else None
+            flush_person()
+            new_prefix = nconst[:5]
+            if old_prefix is not None and new_prefix != old_prefix:
+                flush_shard()
+                shard = {}
+            shard_prefix = new_prefix
+            current_n = nconst
+            current = {
+                "nconst": nconst,
+                "name": name or nconst,
+                "birth_year": birth_year,
+                "death_year": death_year,
+                "professions": professions.split(",") if professions else [],
+                "roles": {"actor": [], "regizor": [], "scenarist": []},
+            }
+            seen = {"actor": set(), "regizor": set(), "scenarist": set()}
+        if role not in current["roles"] or imdb_id in seen[role]:
+            continue
+        current["roles"][role].append(compact_card((imdb_id,typ,title,original,ro_title,year,rating,votes,genres)))
+        seen[role].add(imdb_id)
+        credit_count += 1
+
+    flush_person()
+    flush_shard()
+    write_json(out / 'people-meta.json', {
+        "people": people_count,
+        "credits": credit_count,
+        "generated_at": time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),
+        "roles": ["actor","regizor","scenarist"],
+    })
+    log(f"Persoane indexate: {people_count:,}; credite: {credit_count:,}")
+
+
+
 def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=None) -> None:
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -550,6 +656,7 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
     })
     build_search_buckets(con,out)
     build_title_shards(con,out,editorial)
+    build_people_index(con,out)
 
 
 def main():
