@@ -49,6 +49,7 @@ jobs:
           test -s public/data/meta.json
           test -s public/data/movies/page-1.json
           test -s public/data/tv/page-1.json
+          test -s public/data/people-meta.json
           python - <<'PY'
           import json
           from pathlib import Path
