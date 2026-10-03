@@ -562,6 +562,7 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
     shard = {}
     people_count = 0
     credit_count = 0
+    people_ids = []
 
     def compact_card(row):
         imdb_id, typ, title, original, ro_title, year, rating, votes, genres = row
@@ -584,6 +585,7 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
             current["roles"] = {k:v for k,v in current["roles"].items() if v}
             if current["roles"]:
                 shard[current_n] = current
+                people_ids.append(current_n)
                 people_count += 1
 
     def flush_shard():
@@ -620,6 +622,7 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
 
     flush_person()
     flush_shard()
+    (out / 'people-ids.txt').write_text('\n'.join(people_ids) + ('\n' if people_ids else ''), encoding='utf-8')
     write_json(out / 'people-meta.json', {
         "people": people_count,
         "credits": credit_count,
