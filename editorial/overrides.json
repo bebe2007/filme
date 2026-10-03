@@ -1,0 +1,20 @@
+{
+  "_schema": {
+    "description": "Override-uri editoriale proprii pentru filme.bratu-marian.com. Cheia este IMDb ID-ul.",
+    "allowed_fields": [
+      "description",
+      "poster",
+      "background",
+      "trailer_youtube",
+      "country",
+      "language",
+      "released"
+    ],
+    "example": {
+      "tt0000000": {
+        "description": "Descriere editorială în limba română.",
+        "trailer_youtube": "YouTubeVideoId"
+      }
+    }
+  }
+}
