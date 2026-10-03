@@ -462,7 +462,7 @@ def load_editorial_overrides(path: Path):
         return {}
     if not isinstance(data,dict):
         return {}
-    allowed={"description","poster","background","trailer_youtube","country","language","released"}
+    allowed={"description","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url"}
     out={}
     for imdb,row in data.items():
         if not TT_RE.match(str(imdb)) or not isinstance(row,dict):
@@ -517,7 +517,7 @@ def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> No
             }
             if imdb in editorial:
                 shard[imdb]["editorial"]=editorial[imdb]
-                for key in ("description","poster","background","trailer_youtube","country","language","released"):
+                for key in ("description","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url"):
                     if key in editorial[imdb]:
                         shard[imdb][key]=editorial[imdb][key]
         write_json(out/'title-shards'/f'{prefix}.json',shard)
