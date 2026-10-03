@@ -162,3 +162,24 @@ Dacă nu există subtitrare română la sursă, pagina nu o poate crea automat.
 <p>
 Proiect creat de <strong>Bratu Marian</strong>.
 </p>
+
+
+<hr>
+
+<h2>Metadate editoriale pentru filme.bratu-marian.com</h2>
+
+<p>Generatorul catalogului păstrează un strat editorial separat în <code>editorial/overrides.json</code>. Cheia fiecărei intrări este ID-ul IMDb, iar câmpurile acceptate sunt <code>description</code>, <code>poster</code>, <code>background</code>, <code>trailer_youtube</code>, <code>country</code>, <code>language</code> și <code>released</code>.</p>
+
+<p>Aceste valori au prioritate pe site față de metadatele editoriale de rezervă și nu sunt șterse de reconstrucția zilnică a catalogului. Datele factuale IMDb (an, durată, genuri, rating, distribuție, regie și scenariu) rămân generate din seturile IMDb.</p>
+
+<p>Exemplu:</p>
+
+<pre>
+{
+  "tt1234567": {
+    "description": "Descriere editorială în limba română.",
+    "trailer_youtube": "VIDEO_ID_YOUTUBE",
+    "poster": "https://exemplu.ro/poster.jpg"
+  }
+}
+</pre>
