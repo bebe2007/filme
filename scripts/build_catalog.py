@@ -452,7 +452,30 @@ def parse_characters(raw):
         return []
 
 
-def build_title_shards(con: sqlite3.Connection, out: Path) -> None:
+def load_editorial_overrides(path: Path):
+    if not path or not path.exists():
+        return {}
+    try:
+        data=json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log(f"Nu pot citi stratul editorial: {exc}")
+        return {}
+    if not isinstance(data,dict):
+        return {}
+    allowed={"description","poster","background","trailer_youtube","country","language","released"}
+    out={}
+    for imdb,row in data.items():
+        if not TT_RE.match(str(imdb)) or not isinstance(row,dict):
+            continue
+        clean_row={k:v for k,v in row.items() if k in allowed and isinstance(v,(str,int,float,bool)) and str(v).strip()}
+        if clean_row:
+            out[str(imdb).lower()]=clean_row
+    log(f"Override-uri editoriale: {len(out):,}")
+    return out
+
+
+def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> None:
+    editorial=editorial or {}
     log("Construiesc paginile virtuale / title shards")
     all_ids=[r[0] for r in con.execute("SELECT imdb_id FROM titles ORDER BY imdb_id")]
     groups=defaultdict(list)
@@ -492,11 +515,16 @@ def build_title_shards(con: sqlite3.Connection, out: Path) -> None:
                 "directors":crew.get(imdb,{}).get('director',[]),"writers":crew.get(imdb,{}).get('writer',[]),"cast":cast,"credits":other,
                 "seasons":seasons,"total_episodes":sum(len(x['episodes_data']) for x in seasons) if seasons else None
             }
+            if imdb in editorial:
+                shard[imdb]["editorial"]=editorial[imdb]
+                for key in ("description","poster","background","trailer_youtube","country","language","released"):
+                    if key in editorial[imdb]:
+                        shard[imdb][key]=editorial[imdb][key]
         write_json(out/'title-shards'/f'{prefix}.json',shard)
         if idx%500==0: log(f"  shards: {idx:,}/{len(groups):,}")
 
 
-def build_output(con: sqlite3.Connection, out: Path, page_size: int) -> None:
+def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=None) -> None:
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
     log("Generez catalogul paginat")
@@ -521,7 +549,7 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int) -> None:
         "source_note":"Catalog membership follows the provider ID lists; factual metadata fields are populated only when present in the imported datasets."
     })
     build_search_buckets(con,out)
-    build_title_shards(con,out)
+    build_title_shards(con,out,editorial)
 
 
 def main():
@@ -530,6 +558,7 @@ def main():
     ap.add_argument('--work',default='.catalog-work')
     ap.add_argument('--page-size',type=int,default=70)
     ap.add_argument('--force-download',action='store_true')
+    ap.add_argument('--editorial',default='editorial/overrides.json')
     args=ap.parse_args()
     out=Path(args.out).resolve(); work=Path(args.work).resolve(); work.mkdir(parents=True,exist_ok=True)
     downloads=work/'downloads'; downloads.mkdir(exist_ok=True)
@@ -549,7 +578,8 @@ def main():
         import_crew(con,downloads/'title.crew.tsv.gz')
         import_principals(con,downloads/'title.principals.tsv.gz')
         import_people(con,downloads/'name.basics.tsv.gz')
-        build_output(con,out,args.page_size)
+        editorial=load_editorial_overrides(Path(args.editorial).resolve())
+        build_output(con,out,args.page_size,editorial)
     finally:
         con.close()
     log(f"Gata. Date: {out}")
