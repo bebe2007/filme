@@ -379,9 +379,9 @@ def import_people(con: sqlite3.Connection, path: Path) -> None:
     finally: f.close()
 
 
-def title_to_card(row):
+def title_to_card(row, include_detail=False):
     imdb_id, typ, title, original, ro_title, year, end_year, runtime, genres, rating, votes = row
-    return {
+    card = {
         "imdb_id": imdb_id,
         "type": typ,
         "title": ro_title or title or imdb_id,
@@ -391,6 +391,14 @@ def title_to_card(row):
         "rating": rating,
         "votes": votes,
     }
+    # Listing/genre/year payloads also carry compact factual fields used by the
+    # Bratu Marian site for same-type recommendations and richer cards. Search
+    # buckets stay compact because they are repeated across many prefixes.
+    if include_detail:
+        card["end_year"] = end_year
+        card["runtime"] = runtime
+        card["genres"] = genres.split(",") if genres else []
+    return card
 
 
 def write_json(path: Path, obj) -> None:
@@ -409,7 +417,7 @@ def page_query(con, where, params, page_size, out_dir: Path):
                              FROM titles WHERE {where}
                              ORDER BY (year IS NULL), year DESC, COALESCE(romanian_title,title,imdb_id) COLLATE NOCASE, imdb_id
                              LIMIT ? OFFSET ?""",(*params,page_size,(p-1)*page_size)).fetchall()
-        write_json(out_dir/f"page-{p}.json",{"page":p,"pages":pages,"total":total,"items":[title_to_card(r) for r in rows]})
+        write_json(out_dir/f"page-{p}.json",{"page":p,"pages":pages,"total":total,"items":[title_to_card(r, True) for r in rows]})
     return total,pages
 
 
