@@ -821,6 +821,7 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
 
     write_json(out/'meta.json',{
         "schema_version":2,
+        "latest_feeds":True,
         "generated_at":time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),
         "items_per_page":page_size,
         "movies":movies_total,"tv":tv_total,"total":movies_total+tv_total,
