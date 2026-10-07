@@ -179,7 +179,6 @@ def download(
     raise last_exc
 
 
-def open_tsv_gz
 def open_tsv_gz(path: Path):
     f = gzip.open(path, "rt", encoding="utf-8", errors="replace", newline="")
     return f, csv.DictReader(f, delimiter="\t")
