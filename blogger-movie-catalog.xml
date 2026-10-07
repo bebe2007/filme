@@ -687,6 +687,31 @@
     return 'movies/page-'+state.page+'.json';
   }
 
+  function interleaveHomeItems(movies,tv){
+    var items=[];
+    for(var i=0;i<40;i++){if(movies[i])items.push(movies[i]);if(tv[i])items.push(tv[i]);}
+    return items;
+  }
+
+  function showHomeItems(movies,tv,note){
+    var items=interleaveHomeItems(movies,tv);
+    state.totalItems=items.length;state.totalPages=1;
+    els.countText.textContent=items.length+' titluri'+(note?' · '+note:'');
+    renderCards(items);
+    renderPagination(1,1);
+  }
+
+  function loadStaticHomeFallback(){
+    return Promise.all([
+      fetchJSON(dataUrl('movies/page-1.json')),
+      fetchJSON(dataUrl('tv/page-1.json'))
+    ]).then(function(parts){
+      var movies=((parts[0]&&parts[0].items)||[]).slice(0,40).map(function(x){x.type='movie';return x;});
+      var tv=((parts[1]&&parts[1].items)||[]).slice(0,40).map(function(x){x.type='tv';return x;});
+      showHomeItems(movies,tv,'catalog local');
+    });
+  }
+
   function loadHome(){
     setLoading('Se încarcă titlurile recente...');
     Promise.all([
@@ -695,16 +720,13 @@
     ]).then(function(parts){
       var movies=(parts[0]&&parts[0].result?parts[0].result:[]).filter(function(x){return /^tt\d{5,12}$/i.test(String(x.imdb_id||''));}).slice(0,40).map(function(x){x.type='movie';return x;});
       var tv=(parts[1]&&parts[1].result?parts[1].result:[]).filter(function(x){return /^tt\d{5,12}$/i.test(String(x.imdb_id||''));}).slice(0,40).map(function(x){x.type='tv';return x;});
-      var items=[];
-      for(var i=0;i<40;i++){if(movies[i])items.push(movies[i]);if(tv[i])items.push(tv[i]);}
-      state.totalItems=items.length;state.totalPages=1;
-      els.countText.textContent=items.length+' titluri';
-      renderCards(items);
-      renderPagination(1,1);
-    }).catch(function(err){setError(err.message);});
+      showHomeItems(movies,tv,'live');
+    }).catch(function(){
+      loadStaticHomeFallback().catch(function(err){setError(err.message);});
+    });
   }
 
-  function searchBucket(query){
+  function searchBucket(query){  function searchBucket(query){
     var n=normalizeSearch(query);
     if(/^tt\d{5,12}$/.test(n.replace(/\s/g,''))){return null;}
     var chars=n.replace(/\s/g,'');
@@ -813,21 +835,27 @@
       var item=shard[id] || (shard.items&&shard.items[id]) || null;
       if(!item){throw new Error('Titlul nu există în shard.');}
       return item;
-    });
-    if(!CONFIG.ENABLE_PROVIDER_INFO){return local.then(function(item){return {local:item,provider:null};});}
-    var infoPath=type==='tv'?'info/tv/'+encodeURIComponent(id)+'.json':'info/movie/'+encodeURIComponent(id)+'.json';
-    var provider=fetchJSON(providerUrl(infoPath)).catch(function(){return null;});
-    return Promise.all([local.catch(function(){return null;}),provider]).then(function(pair){
-      if(!pair[0]&&!pair[1]){throw new Error('Nu există informații disponibile pentru '+id+'.');}
-      return {local:pair[0],provider:pair[1]};
+    }).catch(function(){return null;});
+
+    return local.then(function(localItem){
+      var resolvedType=(localItem&&localItem.type==='tv')?'tv':(type==='tv'?'tv':'movie');
+      if(!CONFIG.ENABLE_PROVIDER_INFO){
+        if(!localItem){throw new Error('Nu există informații locale disponibile pentru '+id+'.');}
+        return {local:localItem,provider:null,resolved_type:resolvedType};
+      }
+      var infoPath=resolvedType==='tv'?'info/tv/'+encodeURIComponent(id)+'.json':'info/movie/'+encodeURIComponent(id)+'.json';
+      return fetchJSON(providerUrl(infoPath)).catch(function(){return null;}).then(function(provider){
+        if(!localItem&&!provider){throw new Error('Nu există informații disponibile pentru '+id+'.');}
+        return {local:localItem,provider:provider,resolved_type:resolvedType};
+      });
     });
   }
 
-  function mergeTitleData(id,type,pair){
+  function mergeTitleData(id,type,pair){  function mergeTitleData(id,type,pair){
     var a=pair.local||{},b=pair.provider||{};
     return {
       imdb_id:id,
-      type:(a.type||b.type||type)==='tv'?'tv':'movie',
+      type:(a.type||b.type||pair.resolved_type||type)==='tv'?'tv':'movie',
       title:a.title||a.romanian_title||b.title||id,
       romanian_title:a.romanian_title||'',
       original_title:a.original_title||'',
