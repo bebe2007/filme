@@ -726,7 +726,7 @@
     });
   }
 
-  function searchBucket(query){  function searchBucket(query){
+  function searchBucket(query){
     var n=normalizeSearch(query);
     if(/^tt\d{5,12}$/.test(n.replace(/\s/g,''))){return null;}
     var chars=n.replace(/\s/g,'');
@@ -851,7 +851,7 @@
     });
   }
 
-  function mergeTitleData(id,type,pair){  function mergeTitleData(id,type,pair){
+  function mergeTitleData(id,type,pair){
     var a=pair.local||{},b=pair.provider||{};
     return {
       imdb_id:id,
