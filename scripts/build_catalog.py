@@ -19,6 +19,7 @@ import sqlite3
 import sys
 import time
 import unicodedata
+import urllib.error
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -88,18 +89,94 @@ def slugify(s: str) -> str:
     return normalize(s).replace(" ", "-") or "necunoscut"
 
 
-def download(url: str, dest: Path, force: bool = False) -> None:
-    if dest.exists() and dest.stat().st_size > 0 and not force:
+RETRYABLE_HTTP_CODES = {429, 500, 502, 503, 504}
+
+
+def validate_vse_list(path: Path, filename: str) -> bool:
+    """Reject empty/error pages accidentally returned instead of VSE ID lists."""
+    if not path.exists() or path.stat().st_size <= 0:
+        return False
+    matcher = EPS_RE if filename == "eps_imdb.txt" else TT_RE
+    checked = 0
+    valid = 0
+    try:
+        with open(path, "rt", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                value = line.strip()
+                if not value:
+                    continue
+                checked += 1
+                candidate = value if filename == "eps_imdb.txt" else value.lower()
+                if matcher.match(candidate):
+                    valid += 1
+                if checked >= 5000:
+                    break
+    except OSError:
+        return False
+    return checked >= 10 and (valid / checked) >= 0.95
+
+
+def download(
+    url: str,
+    dest: Path,
+    force: bool = False,
+    attempts: int = 5,
+    fallback: Path | None = None,
+    validator=None,
+) -> None:
+    def is_valid(path: Path) -> bool:
+        return path.exists() and path.stat().st_size > 0 and (validator is None or validator(path))
+
+    if not force and is_valid(dest):
         log(f"Există deja: {dest.name}")
         return
+
+    if dest.exists():
+        dest.unlink()
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 CatalogBuilder/1.0"})
-    log(f"Descarc {url}")
-    with urllib.request.urlopen(req, timeout=120) as r, open(tmp, "wb") as f:
-        shutil.copyfileobj(r, f, length=1024 * 1024)
-    tmp.replace(dest)
-    log(f"Descărcat: {dest.name} ({dest.stat().st_size / 1024 / 1024:.1f} MB)")
+    last_exc: Exception = RuntimeError(f"Nu am putut descărca {url}")
+
+    for attempt in range(1, max(1, attempts) + 1):
+        tmp.unlink(missing_ok=True)
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 CatalogBuilder/1.1",
+                "Accept": "text/plain,*/*;q=0.8",
+            },
+        )
+        try:
+            log(f"Descarc {url} (încercarea {attempt}/{attempts})")
+            with urllib.request.urlopen(req, timeout=120) as r, open(tmp, "wb") as f:
+                shutil.copyfileobj(r, f, length=1024 * 1024)
+            if validator is not None and not validator(tmp):
+                raise ValueError(f"Conținut invalid primit de la {url}")
+            tmp.replace(dest)
+            log(f"Descărcat: {dest.name} ({dest.stat().st_size / 1024 / 1024:.1f} MB)")
+            return
+        except urllib.error.HTTPError as exc:
+            last_exc = exc
+            tmp.unlink(missing_ok=True)
+            if exc.code not in RETRYABLE_HTTP_CODES or attempt >= attempts:
+                break
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+            last_exc = exc
+            tmp.unlink(missing_ok=True)
+            if attempt >= attempts:
+                break
+
+        wait = min(60, 5 * (2 ** (attempt - 1)))
+        log(f"Descărcarea a eșuat: {last_exc}. Reîncerc în {wait}s.")
+        time.sleep(wait)
+
+    if fallback is not None and is_valid(fallback):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(fallback, dest)
+        log(f"Provider indisponibil. Folosesc ultima copie validă din cache: {fallback}")
+        return
+
+    raise last_exc
 
 
 def open_tsv_gz(path: Path):
@@ -651,6 +728,7 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
         page_query(con,"year=?",(y,),page_size,out/'years'/str(y))
 
     write_json(out/'meta.json',{
+        "schema_version":2,
         "generated_at":time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),
         "items_per_page":page_size,
         "movies":movies_total,"tv":tv_total,"total":movies_total+tv_total,
@@ -666,17 +744,25 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--out',default='public/data')
     ap.add_argument('--work',default='.catalog-work')
+    ap.add_argument('--vse-cache',default='.catalog-cache/vse')
     ap.add_argument('--page-size',type=int,default=70)
     ap.add_argument('--force-download',action='store_true')
     ap.add_argument('--editorial',default='editorial/overrides.json')
     args=ap.parse_args()
     out=Path(args.out).resolve(); work=Path(args.work).resolve(); work.mkdir(parents=True,exist_ok=True)
     downloads=work/'downloads'; downloads.mkdir(exist_ok=True)
+    vse_cache=Path(args.vse_cache).resolve(); vse_cache.mkdir(parents=True,exist_ok=True)
 
-    for fn in IMDB_FILES:
-        download(f"{IMDB_BASE}/{fn}",downloads/fn,args.force_download)
+    # VSE determines catalog membership, so check it first. A temporary provider
+    # outage can fall back to the most recent validated ID lists restored by Actions cache.
     for fn,url in VSE_FILES.items():
-        download(url,downloads/fn,args.force_download)
+        validator=lambda p, filename=fn: validate_vse_list(p, filename)
+        download(url,downloads/fn,args.force_download,attempts=5,fallback=vse_cache/fn,validator=validator)
+        shutil.copy2(downloads/fn,vse_cache/fn)
+
+    # IMDb files are large; only start downloading them after VSE lists are available.
+    for fn in IMDB_FILES:
+        download(f"{IMDB_BASE}/{fn}",downloads/fn,args.force_download,attempts=4)
 
     db=work/'catalog.sqlite'; con=init_db(db)
     try:

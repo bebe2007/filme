@@ -33,9 +33,24 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Restore last valid VSE ID lists
+        uses: actions/cache@v4
+        with:
+          path: .catalog-cache/vse
+          key: vse-catalog-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            vse-catalog-${{ runner.os }}-
+
+      - name: Read currently published catalog metadata
+        run: |
+          mkdir -p .catalog-work
+          curl --fail --silent --show-error --location --max-time 30 \
+            https://bebe2007.github.io/filme/data/meta.json \
+            -o .catalog-work/previous-meta.json || true
+
       - name: Build static catalog
         run: |
-          python scripts/build_catalog.py --out public/data --work .catalog-work --page-size 70
+          python scripts/build_catalog.py --out public/data --work .catalog-work --vse-cache .catalog-cache/vse --page-size 70
           touch public/.nojekyll
 
       - name: Preserve existing GitHub Pages player site
@@ -50,13 +65,32 @@ jobs:
           test -s public/data/movies/page-1.json
           test -s public/data/tv/page-1.json
           test -s public/data/people-meta.json
+          test -s public/data/people-ids.txt
           python - <<'PY'
           import json
           from pathlib import Path
+
           meta = json.loads(Path("public/data/meta.json").read_text(encoding="utf-8"))
+          assert meta.get("schema_version") == 2
           assert meta["items_per_page"] == 70
           assert meta["movies"] > 0
           assert meta["tv"] > 0
+
+          previous_path = Path(".catalog-work/previous-meta.json")
+          if previous_path.exists() and previous_path.stat().st_size:
+              try:
+                  previous = json.loads(previous_path.read_text(encoding="utf-8"))
+              except Exception as exc:
+                  print(f"Nu pot valida meta anterior: {exc}")
+              else:
+                  for key in ("movies", "tv"):
+                      old = int(previous.get(key) or 0)
+                      new = int(meta.get(key) or 0)
+                      if old >= 100 and new < old * 0.50:
+                          raise AssertionError(
+                              f"Catalog suspect pentru {key}: {new} vs {old} anterior (<50%). Deploy oprit."
+                          )
+
           print(meta)
           PY
 
