@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build a static Blogger movie/TV catalog from VSEmbed availability lists + IMDb TSV datasets.
+"""Build the static movie/TV data catalog used by filme.bratu-marian.com.
 
-The script never creates plot summaries or biographies. It emits only values present in the
-input datasets. Provider-specific live fields (quality, poster, time_added) are intentionally
-fetched by the Blogger theme from /info/... when a title is opened.
+Catalog membership comes from VSEmbed availability lists and factual metadata from IMDb TSV
+datasets. The build also publishes compact "latest" feeds for the PHP homepage. The script
+does not invent plot summaries or biographies.
 """
 from __future__ import annotations
 
@@ -177,6 +177,37 @@ def download(
         return
 
     raise last_exc
+
+
+def fetch_json_document(url: str, attempts: int = 4, timeout: int = 30):
+    """Fetch a small JSON endpoint with retries. Returns None on final failure."""
+    last_exc = None
+    for attempt in range(1, max(1, attempts) + 1):
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 CatalogBuilder/1.1",
+                "Accept": "application/json,text/plain,*/*;q=0.8",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                raw = r.read()
+            doc = json.loads(raw.decode("utf-8", errors="replace"))
+            return doc if isinstance(doc, (dict, list)) else None
+        except urllib.error.HTTPError as exc:
+            last_exc = exc
+            if exc.code not in RETRYABLE_HTTP_CODES or attempt >= attempts:
+                break
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as exc:
+            last_exc = exc
+            if attempt >= attempts:
+                break
+        wait = min(30, 3 * (2 ** (attempt - 1)))
+        log(f"Endpoint JSON indisponibil: {url}: {last_exc}. Reîncerc în {wait}s.")
+        time.sleep(wait)
+    log(f"Endpoint JSON indisponibil după {attempts} încercări: {url}: {last_exc}")
+    return None
 
 
 def open_tsv_gz(path: Path):
@@ -710,6 +741,67 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
 
 
 
+def build_latest_feeds(con: sqlite3.Connection, out: Path, limit: int = 70) -> None:
+    """Publish homepage feeds ordered by the provider's latest endpoints.
+
+    If a latest endpoint is temporarily unavailable, fall back to a deterministic recent
+    selection from the already validated catalog so the daily build can still deploy.
+    """
+    log("Construiesc fluxurile latest pentru pagina principală")
+    specs = {
+        "movies": ("movie", f"{VSE_BASE}/movies/latest/page-1.json"),
+        "tv": ("tv", f"{VSE_BASE}/tvshows/latest/page-1.json"),
+    }
+    select_sql = """SELECT imdb_id,type,title,original_title,romanian_title,year,end_year,runtime,genres,rating,votes
+                    FROM titles WHERE imdb_id=? AND type=?"""
+    fallback_sql = """SELECT imdb_id,type,title,original_title,romanian_title,year,end_year,runtime,genres,rating,votes
+                      FROM titles WHERE type=?
+                      ORDER BY (year IS NULL), year DESC, imdb_id DESC LIMIT ?"""
+
+    for public_name, (typ, url) in specs.items():
+        doc = fetch_json_document(url, attempts=4, timeout=30)
+        rows = []
+        if isinstance(doc, dict):
+            rows = doc.get("result") or doc.get("items") or []
+        elif isinstance(doc, list):
+            rows = doc
+        if not isinstance(rows, list):
+            rows = []
+
+        cards = []
+        seen = set()
+        for provider_item in rows:
+            if not isinstance(provider_item, dict):
+                continue
+            imdb = str(provider_item.get("imdb_id") or provider_item.get("id") or "").strip().lower()
+            if not TT_RE.match(imdb) or imdb in seen:
+                continue
+            dbrow = con.execute(select_sql, (imdb, typ)).fetchone()
+            if not dbrow:
+                continue
+            card = title_to_card(dbrow, True)
+            for key in ("quality", "time_added", "poster"):
+                value = provider_item.get(key)
+                if value not in (None, ""):
+                    card[key] = value
+            cards.append(card)
+            seen.add(imdb)
+            if len(cards) >= limit:
+                break
+
+        source = "provider_latest"
+        if not cards:
+            cards = [title_to_card(r, True) for r in con.execute(fallback_sql, (typ, limit)).fetchall()]
+            source = "catalog_fallback"
+
+        write_json(out / "latest" / f"{public_name}.json", {
+            "generated_at": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            "source": source,
+            "items": cards,
+        })
+        log(f"Latest {public_name}: {len(cards)} titluri ({source})")
+
+
 def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=None) -> None:
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -735,6 +827,7 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
         "genres":sorted(genres),"years":sorted(years,reverse=True),
         "source_note":"Catalog membership follows the provider ID lists; factual metadata fields are populated only when present in the imported datasets."
     })
+    build_latest_feeds(con,out,page_size)
     build_search_buckets(con,out)
     build_title_shards(con,out,editorial)
     build_people_index(con,out)

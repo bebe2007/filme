@@ -64,6 +64,8 @@ jobs:
           test -s public/data/meta.json
           test -s public/data/movies/page-1.json
           test -s public/data/tv/page-1.json
+          test -s public/data/latest/movies.json
+          test -s public/data/latest/tv.json
           test -s public/data/people-meta.json
           test -s public/data/people-ids.txt
           python - <<'PY'
@@ -75,6 +77,9 @@ jobs:
           assert meta["items_per_page"] == 70
           assert meta["movies"] > 0
           assert meta["tv"] > 0
+          for path in ("public/data/latest/movies.json", "public/data/latest/tv.json"):
+              latest = json.loads(Path(path).read_text(encoding="utf-8"))
+              assert isinstance(latest.get("items"), list) and latest["items"]
 
           previous_path = Path(".catalog-work/previous-meta.json")
           if previous_path.exists() and previous_path.stat().st_size:
