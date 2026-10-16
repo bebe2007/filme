@@ -1,15 +1,17 @@
 """Publish date-ordered browsing, daily counts and catalog-wide ranked recommendations.
 
 No image binaries are downloaded. The state contains identifiers, timestamps and URLs.
-On first build the provider's latest pages are walked in full; subsequent builds stop
-when an unchanged, previously indexed page older than today is reached.
+Provider requests are sequential and throttled. Site addition counts use a verified
+previous-day membership snapshot; undated TV lists retain their provider order.
 """
 from __future__ import annotations
 
 import json
 import math
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+import os
+import time
+import re
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -57,92 +59,103 @@ def rows_from(doc):
     return []
 
 
-def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None):
+def baseline_for_day(old, ids, now, baseline_path=None):
+    today = now.astimezone(ZoneInfo('Europe/Bucharest')).date()
+    prior = old.get('daily_baseline') or {}
+    if prior.get('date') == str(today) and isinstance(prior.get('ids'), list):
+        return prior
+    generated = provider_time(old.get('generated_at'))
+    if old.get('schema_version', 0) >= 2 and generated and datetime.fromisoformat(generated).astimezone(ZoneInfo('Europe/Bucharest')).date() < today:
+        return {'date':str(today),'verified':True,'ids':list((old.get('items') or {}).keys())}
+    if baseline_path:
+        folder = Path(baseline_path)
+        manifest = read(folder/'manifest.json')
+        if manifest.get('catalog_date') == str(today-timedelta(days=1)):
+            prior_ids = set()
+            valid = True
+            for name in ('movie_imdb.txt', 'tv_imdb.txt'):
+                try:
+                    values = {x.strip().lower() for x in (folder/name).read_text().splitlines() if x.strip()}
+                    if not values or not all(re.fullmatch(r'tt\d{5,12}', x) for x in values): valid=False
+                    prior_ids.update(values)
+                except OSError:
+                    valid=False
+            if valid and len(prior_ids.intersection(ids)) >= max(1, int(len(ids)*0.5)):
+                return {'date':str(today),'verified':True,'ids':sorted(prior_ids)}
+    # This is a baseline observation, never an invented historical addition time.
+    return {'date':str(today),'verified':False,'ids':list(ids)}
+
+
+def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None, request_interval=1.5, baseline_path=None):
     now = now or datetime.now(timezone.utc)
     local_today = now.astimezone(ZoneInfo('Europe/Bucharest')).date()
     old = read(state_path)
     if not old:
         old = fetch('https://bebe2007.github.io/filme/data/catalog-history.json', attempts=1, timeout=15) or {}
     old_items = old.get('items', {}) if isinstance(old, dict) else {}
-    if not isinstance(old_items, dict):
-        old_items = {}
+    if not isinstance(old_items, dict): old_items = {}
     ids = {r[0]: r[1] for r in con.execute('SELECT imdb_id,type FROM titles')}
+    baseline = baseline_for_day(old, ids, now, baseline_path or os.environ.get('CATALOG_BASELINE_DIR'))
+    baseline_ids = set(baseline['ids'])
     history = {}
     for imdb, typ in ids.items():
         row = old_items.get(imdb)
         row = dict(row) if isinstance(row, dict) else {}
-        # After bootstrap, this is the moment a title first enters this site's catalog.
-        if old_items and imdb not in old_items:
+        if old.get('schema_version', 0) < 2:
+            row.pop('site_added_at', None)  # v1 confused provider timestamps with site additions.
+        if baseline['verified'] and imdb not in baseline_ids:
+            row.setdefault('site_added_at', now.isoformat())
+        elif old.get('schema_version', 0) >= 2 and imdb not in old_items:
             row['site_added_at'] = now.isoformat()
         row['type'] = typ
         history[imdb] = row
 
     completeness = {}
+    pagination = {}
+    last_request = 0.0
     for typ, endpoint in [('movie','movies'), ('tv','tvshows')]:
         seen = set()
+        raw_seen = set()
         finished = False
-        previous_complete = bool((old.get('complete') or {}).get(typ))
-        for start in range(1, max_pages + 1, 8):
-            pages = list(range(start, min(start+8, max_pages+1)))
-            def get(page):
-                return fetch(f'https://vsembed.ru/{endpoint}/latest/page-{page}.json', attempts=2, timeout=15)
-            with ThreadPoolExecutor(max_workers=4) as pool:
-                docs = list(pool.map(get, pages))
-            stop = False
-            for page, doc in zip(pages, docs):
-                if doc is None or not isinstance(doc,(dict,list)) or (isinstance(doc,dict) and not any(k in doc for k in ('result','items'))):
-                    stop = True
-                    break
-                rows = rows_from(doc)
-                if not rows:
-                    finished = True
-                    stop = True
-                    break
-                unchanged = True
-                dated_before_today = True
-                new_on_page = 0
-                for row in rows:
-                    imdb = str(row.get('imdb_id') or row.get('id') or '').lower().strip()
-                    if imdb not in ids or ids[imdb] != typ:
-                        continue
-                    if imdb not in seen:
-                        new_on_page += 1
-                    seen.add(imdb)
-                    added = provider_time(row.get('time_added'))
-                    prior = old_items.get(imdb) or {}
-                    if not isinstance(prior, dict) or not prior.get('provider_added_at') or (added and prior.get('provider_added_at') != added):
-                        unchanged = False
-                    if not added or datetime.fromisoformat(added).astimezone(ZoneInfo('Europe/Bucharest')).date() >= local_today:
-                        dated_before_today = False
-                    entry = history[imdb]
-                    if added:
-                        entry['provider_added_at'] = added
-                        if not entry.get('site_added_at'):
-                            entry['site_added_at'] = added
-                    poster = str(row.get('poster') or '')
-                    if poster.startswith('https://'):
-                        entry['poster'] = poster
-                if new_on_page == 0:
-                    # A repeated nonempty page is not proof of complete pagination.
-                    stop = True
-                    break
-                if previous_complete and unchanged and dated_before_today:
-                    finished = True
-                    stop = True
-                    break
-                page_count = (doc.get('pages') or doc.get('total_pages')) if isinstance(doc, dict) else None
-                if str(page_count).isdigit() and page >= int(page_count):
-                    finished = True
-                    stop = True
-                    break
-            print(f'Presentation {typ}: pages through {start+len(pages)-1}, indexed {len(seen):,}', flush=True)
-            if stop:
+        for page in range(1, max_pages+1):
+            if request_interval:
+                time.sleep(max(0, request_interval-(time.monotonic()-last_request)))
+            last_request = time.monotonic()
+            doc = fetch(f'https://vsembed.ru/{endpoint}/latest/page-{page}.json', attempts=4, timeout=20)
+            if doc is None or not isinstance(doc,(dict,list)) or (isinstance(doc,dict) and not any(k in doc for k in ('result','items'))): break
+            rows = rows_from(doc)
+            if not rows:
+                finished = True
                 break
-        # Unknown dates prevent a false claim of fully chronological order.
-        unknown = any(not r.get('site_added_at') for k,r in history.items() if ids[k] == typ)
+            raw_ids = [str(row.get('imdb_id') or row.get('id') or '').lower().strip() for row in rows]
+            if not any(x and x not in raw_seen for x in raw_ids):
+                print(f'Presentation {typ}: repeated upstream page {page}; keeping unverified history',flush=True)
+                break
+            raw_seen.update(raw_ids)
+            if page == 1:
+                print(f'Presentation {typ}: upstream pages={(doc.get("pages") or doc.get("total_pages")) if isinstance(doc,dict) else "unknown"}; row fields={list(rows[0])}',flush=True)
+            for offset, row in enumerate(rows):
+                imdb = str(row.get('imdb_id') or row.get('id') or '').lower().strip()
+                if imdb not in ids or ids[imdb] != typ: continue
+                seen.add(imdb)
+                entry = history[imdb]
+                entry['provider_position'] = (page-1)*50+offset
+                added = provider_time(row.get('time_added'))
+                if added: entry['provider_added_at'] = added
+                poster = str(row.get('poster') or '')
+                if poster.startswith('https://'): entry['poster'] = poster
+            if page % 25 == 0 or page == 1:
+                print(f'Presentation {typ}: page {page}, indexed {len(seen):,}',flush=True)
+            page_count = (doc.get('pages') or doc.get('total_pages')) if isinstance(doc, dict) else None
+            if str(page_count).isdigit() and page >= int(page_count):
+                finished = True
+                break
+        unknown = any(not r.get('site_added_at') and not r.get('provider_added_at') for k,r in history.items() if ids[k] == typ)
         completeness[typ] = finished and not unknown
+        pagination[typ] = {'finished':finished,'indexed':len(seen),'total':sum(t==typ for t in ids.values())}
+        print(f'Presentation {typ}: finished={finished}, indexed {len(seen):,}',flush=True)
 
-    state = {'schema_version':1,'generated_at':now.isoformat(),'complete':completeness,'items':history}
+    state = {'schema_version':2,'generated_at':now.isoformat(),'complete':completeness,'pagination':pagination,'daily_baseline':baseline,'items':history}
     write(state_path, state)
     write(out/'catalog-history.json', state)
 
@@ -150,7 +163,7 @@ def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None):
     if 'added_at' not in columns:
         con.execute('ALTER TABLE titles ADD COLUMN added_at TEXT')
     con.executemany('UPDATE titles SET added_at=? WHERE imdb_id=?',
-                    [(r.get('site_added_at'), k) for k,r in history.items()])
+                    [(r.get('site_added_at') or r.get('provider_added_at'), k) for k,r in history.items()])
     con.commit()
     cards = []
     for row in con.execute('SELECT imdb_id,type,title,original_title,romanian_title,year,runtime,genres,rating,votes,added_at FROM titles'):
@@ -161,7 +174,12 @@ def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None):
         if history[imdb].get('poster'):
             c['poster'] = history[imdb]['poster']
         cards.append(c)
-    cards.sort(key=lambda c:(c['added_at'] or '', c['year'] or 0, c['imdb_id']), reverse=True)
+    # TV lists have no time_added field. Preserve their documented newest-first position.
+    def order(c):
+        h=history[c['imdb_id']]
+        observed=h.get('site_added_at') or ''
+        return (bool(observed), observed, -h.get('provider_position', 10**12), c['year'] or 0, c['imdb_id'])
+    cards.sort(key=order, reverse=True)
     row_size = 14
     for scope in ['all','movies','tv']:
         subset = cards if scope == 'all' else [c for c in cards if c['type'] == ('tv' if scope=='tv' else 'movie')]
@@ -184,9 +202,9 @@ def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None):
         ranked.sort(key=lambda c:(c['rating'],c['votes'],c['imdb_id']),reverse=True)
         write(out/'ranked'/f'{name}.json',{'generated_at':now.isoformat(),'minimum_votes':1000,'items':ranked[:250]})
     counts = {'movies':0,'tv':0}
-    for k,r in history.items():
-        value = r.get('site_added_at')
-        if value and datetime.fromisoformat(value).astimezone(ZoneInfo('Europe/Bucharest')).date()==local_today:
-            counts['tv' if ids[k]=='tv' else 'movies'] += 1
+    if baseline['verified']:
+        for imdb,typ in ids.items():
+            if imdb not in baseline_ids: counts['tv' if typ=='tv' else 'movies'] += 1
     write(out/'daily.json',{'date':local_today.isoformat(),'timezone':'Europe/Bucharest',
-          'generated_at':now.isoformat(),'verified':all(completeness.values()),**counts})
+          'generated_at':now.isoformat(),'verified':bool(baseline['verified']),
+          'basis':'catalog_membership_since_previous_day',**counts})

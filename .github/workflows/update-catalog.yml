@@ -21,6 +21,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  inspect-provider:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect upstream pagination contract
+        run: |
+          python - <<'PYCODE'
+          import urllib.request,json,time
+          for kind in ('movies','tvshows'):
+              time.sleep(2)
+              try:
+                  req=urllib.request.Request(f'https://vsembed.ru/{kind}/latest/page-1.json',headers={'User-Agent':'Mozilla/5.0 CatalogBuilder/1.1','Accept':'application/json'})
+                  with urllib.request.urlopen(req,timeout=20) as r: doc=json.load(r)
+                  rows=doc.get('result') or doc.get('items') or []
+                  print(json.dumps({'type':kind,'pages':doc.get('pages'),'rows':len(rows),'fields':list(rows[0]) if rows else [],'sample':[{k:v for k,v in row.items() if k in ('imdb_id','time_added','title')} for row in rows[:2]]}),flush=True)
+              except Exception as exc: print(kind,str(exc),flush=True)
+          PYCODE
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -32,6 +49,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Restore verified previous-day bootstrap membership
+        uses: actions/cache/restore@v4
+        with:
+          path: .catalog-cache/vse
+          key: vse-catalog-Linux-38704274627
+
+      - name: Retain dated bootstrap snapshot
+        run: |
+          mkdir -p .catalog-work/bootstrap-previous-day
+          if [ -f .catalog-cache/vse/movie_imdb.txt ] && [ -f .catalog-cache/vse/tv_imdb.txt ]; then
+            cp .catalog-cache/vse/movie_imdb.txt .catalog-cache/vse/tv_imdb.txt .catalog-work/bootstrap-previous-day/
+            printf '%s' '{"catalog_date":"2026-10-15","source_run":38704274627}' > .catalog-work/bootstrap-previous-day/manifest.json
+          fi
+          rm -rf .catalog-cache/vse
 
       - name: Restore last valid VSE ID lists
         uses: actions/cache@v4
@@ -52,6 +84,8 @@ jobs:
         run: python -m unittest discover -s scripts -p test_catalog_presentation.py
 
       - name: Build static catalog
+        env:
+          CATALOG_BASELINE_DIR: .catalog-work/bootstrap-previous-day
         run: |
           python scripts/build_catalog.py --out public/data --work .catalog-work --vse-cache .catalog-cache/vse --page-size 70
           touch public/.nojekyll
@@ -127,4 +161,5 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
 

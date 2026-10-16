@@ -182,6 +182,7 @@ def download(
 def fetch_json_document(url: str, attempts: int = 4, timeout: int = 30):
     """Fetch a small JSON endpoint with retries. Returns None on final failure."""
     last_exc = None
+    retry_after = 0
     for attempt in range(1, max(1, attempts) + 1):
         req = urllib.request.Request(
             url,
@@ -197,13 +198,17 @@ def fetch_json_document(url: str, attempts: int = 4, timeout: int = 30):
             return doc if isinstance(doc, (dict, list)) else None
         except urllib.error.HTTPError as exc:
             last_exc = exc
+            retry_after = 0
+            if exc.code == 429:
+                try: retry_after = max(15, int(exc.headers.get('Retry-After', 15)))
+                except (TypeError, ValueError): retry_after = 30
             if exc.code not in RETRYABLE_HTTP_CODES or attempt >= attempts:
                 break
         except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as exc:
             last_exc = exc
             if attempt >= attempts:
                 break
-        wait = min(30, 3 * (2 ** (attempt - 1)))
+        wait = max(retry_after, min(60, 5 * (2 ** (attempt - 1))))
         log(f"Endpoint JSON indisponibil: {url}: {last_exc}. Reîncerc în {wait}s.")
         time.sleep(wait)
     log(f"Endpoint JSON indisponibil după {attempts} încercări: {url}: {last_exc}")
@@ -884,3 +889,4 @@ def main():
 
 if __name__=='__main__':
     main()
+

@@ -2,10 +2,10 @@ import json
 import sqlite3
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from catalog_presentation import build_presentation, provider_time
+from catalog_presentation import build_presentation, provider_time, baseline_for_day
 
 
 class PresentationTest(unittest.TestCase):
@@ -32,8 +32,14 @@ class PresentationTest(unittest.TestCase):
         typ='tv' if '/tvshows/' in url else 'movie'
         return {'pages':1,'result':self.provider[typ]}
 
-    def build(self,fetch=None):
-        build_presentation(self.con,self.root/'out',self.root/'state.json',fetch or self.fetch,now=self.now,max_pages=8)
+    def build(self,fetch=None,baseline=True):
+        folder=self.root/'baseline'
+        if baseline:
+            folder.mkdir(exist_ok=True)
+            (folder/'manifest.json').write_text(json.dumps({'catalog_date':str((self.now-timedelta(days=1)).date())}))
+            for typ,name in [('movie','movie_imdb.txt'),('tv','tv_imdb.txt')]:
+                (folder/name).write_text('\n'.join(r['imdb_id'] for r in self.provider[typ][1:]))
+        build_presentation(self.con,self.root/'out',self.root/'state.json',fetch or self.fetch,now=self.now,max_pages=8,request_interval=0,baseline_path=folder if baseline else None)
 
     def doc(self,path):
         return json.loads((self.root/'out'/path).read_text())
@@ -65,11 +71,51 @@ class PresentationTest(unittest.TestCase):
         self.assertEqual(provider_time('2026-10-14 22:30:00'),'2026-10-14T22:30:00+00:00')
 
     def test_outage_does_not_fabricate_first_day_additions(self):
-        self.build(fetch=lambda *a,**k:None)
+        self.build(fetch=lambda *a,**k:None,baseline=False)
         doc=self.doc('daily.json')
         self.assertFalse(doc['verified'])
         self.assertEqual((doc['movies'],doc['tv']),(0,0))
 
+    def test_tv_without_dates_preserves_upstream_order(self):
+        for row in self.provider['tv']: row.pop('time_added',None)
+        self.build(baseline=False)
+        action=next(s for s in self.doc('browse/tv.json')['sections'] if s['genre']=='Action')
+        self.assertEqual(action['items'][0]['imdb_id'],'tt2000000')
+        self.assertEqual(action['items'][0]['year'],1995)
+
+    def test_today_counts_use_membership_not_provider_updates(self):
+        for row in self.provider['movie']+self.provider['tv']: row['time_added']=self.now.isoformat()
+        self.build()
+        daily=self.doc('daily.json')
+        self.assertTrue(daily['verified'])
+        self.assertEqual((daily['movies'],daily['tv']),(1,1))
+
+    def test_verified_membership_counts_survive_metadata_outage(self):
+        self.build(fetch=lambda *a,**k:None)
+        daily=self.doc('daily.json')
+        self.assertTrue(daily['verified'])
+        self.assertEqual((daily['movies'],daily['tv']),(1,1))
+
+    def test_new_day_baseline_rolls_forward(self):
+        self.build()
+        self.now+=timedelta(days=1)
+        self.build(baseline=False)
+        daily=self.doc('daily.json')
+        self.assertTrue(daily['verified'])
+        self.assertEqual((daily['movies'],daily['tv']),(0,0))
+
+    def test_unmatched_page_does_not_stop_catalog_walk(self):
+        def fetch(url,**kwargs):
+            if 'catalog-history' in url:return None
+            typ='tv' if '/tvshows/' in url else 'movie'
+            if 'page-1.' in url:return {'pages':2,'result':[{'imdb_id':'tt99999999'}]}
+            return {'pages':2,'result':self.provider[typ]}
+        self.build(fetch=fetch)
+        state=json.loads((self.root/'state.json').read_text())
+        self.assertEqual(state['pagination']['movie']['indexed'],55)
+        self.assertTrue(state['pagination']['tv']['finished'])
+
 
 if __name__=='__main__':
     unittest.main()
+
