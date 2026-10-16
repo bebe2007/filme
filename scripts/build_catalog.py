@@ -498,6 +498,7 @@ def title_to_card(row, include_detail=False):
         "year": year,
         "rating": rating,
         "votes": votes,
+        "genres": genres.split(",") if genres else [],
     }
     # Listing/genre/year payloads also carry compact factual fields used by the
     # Bratu Marian site for same-type recommendations and richer cards. Search
@@ -802,7 +803,7 @@ def build_latest_feeds(con: sqlite3.Connection, out: Path, limit: int = 70) -> N
         log(f"Latest {public_name}: {len(cards)} titluri ({source})")
 
 
-def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=None) -> None:
+def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=None, presentation_state=None) -> None:
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
     log("Generez catalogul paginat")
@@ -829,6 +830,12 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
         "source_note":"Catalog membership follows the provider ID lists; factual metadata fields are populated only when present in the imported datasets."
     })
     build_latest_feeds(con,out,page_size)
+    from catalog_presentation import build_presentation
+    build_presentation(con,out,presentation_state or Path('.catalog-cache/presentation.json'),fetch_json_document)
+    meta_path=out/'meta.json'
+    meta=json.loads(meta_path.read_text(encoding='utf-8'))
+    meta['presentation_feeds']=True
+    write_json(meta_path,meta)
     build_search_buckets(con,out)
     build_title_shards(con,out,editorial)
     build_people_index(con,out)
@@ -869,7 +876,7 @@ def main():
         import_principals(con,downloads/'title.principals.tsv.gz')
         import_people(con,downloads/'name.basics.tsv.gz')
         editorial=load_editorial_overrides(Path(args.editorial).resolve())
-        build_output(con,out,args.page_size,editorial)
+        build_output(con,out,args.page_size,editorial,vse_cache/'presentation.json')
     finally:
         con.close()
     log(f"Gata. Date: {out}")
