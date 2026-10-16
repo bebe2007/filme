@@ -104,6 +104,40 @@ class PresentationTest(unittest.TestCase):
         self.assertTrue(daily['verified'])
         self.assertEqual((daily['movies'],daily['tv']),(0,0))
 
+    def test_today_feed_excludes_provider_updates_and_uses_membership(self):
+        for row in self.provider['movie']+self.provider['tv']: row['time_added']=self.now.isoformat()
+        self.build()
+        today=self.doc('browse/today.json')
+        self.assertTrue(today['verified'])
+        self.assertEqual(today['date'],'2026-10-15')
+        self.assertEqual(today['total'],2)
+        self.assertEqual({c['imdb_id'] for s in today['sections'] for c in s['items']},{'tt1000000','tt2000000'})
+        self.assertEqual(len(today['sections']),28)
+        self.assertEqual(self.doc('categories/today/action/page-1.json')['total'],2)
+
+    def test_today_feed_empty_when_unverified_or_no_additions(self):
+        self.build(baseline=False)
+        today=self.doc('browse/today.json')
+        self.assertFalse(today['verified'])
+        self.assertEqual(today['total'],0)
+        self.assertFalse(today['hero'])
+        self.now+=timedelta(days=1)
+        self.build(baseline=False)
+        today=self.doc('browse/today.json')
+        self.assertTrue(today['verified'])
+        self.assertEqual(today['total'],0)
+        self.assertTrue(all(not s['items'] for s in today['sections']))
+
+    def test_today_feed_dates_follow_bucharest_midnight(self):
+        self.now=datetime(2026,10,15,22,30,tzinfo=timezone.utc)
+        folder=self.root/'baseline';folder.mkdir()
+        (folder/'manifest.json').write_text(json.dumps({'catalog_date':'2026-10-15'}))
+        for typ,name in [('movie','movie_imdb.txt'),('tv','tv_imdb.txt')]:
+            (folder/name).write_text('\n'.join(r['imdb_id'] for r in self.provider[typ][1:]))
+        build_presentation(self.con,self.root/'out',self.root/'state.json',self.fetch,now=self.now,max_pages=8,request_interval=0,baseline_path=folder)
+        self.assertEqual(self.doc('browse/today.json')['date'],'2026-10-16')
+        self.assertEqual(self.doc('browse/today.json')['total'],2)
+
     def test_unmatched_page_does_not_stop_catalog_walk(self):
         def fetch(url,**kwargs):
             if 'catalog-history' in url:return None

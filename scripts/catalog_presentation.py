@@ -181,21 +181,26 @@ def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None, re
         return (bool(observed), observed, -h.get('provider_position', 10**12), c['year'] or 0, c['imdb_id'])
     cards.sort(key=order, reverse=True)
     row_size = 14
-    for scope in ['all','movies','tv']:
+    for scope in ['all','movies','tv','today']:
         subset = cards if scope == 'all' else [c for c in cards if c['type'] == ('tv' if scope=='tv' else 'movie')]
+        date_fields = {}
+        if scope == 'today':
+            subset = [c for c in cards if baseline['verified'] and c['imdb_id'] not in baseline_ids]
+            date_fields = {'date':local_today.isoformat(),'timezone':'Europe/Bucharest','verified':bool(baseline['verified'])}
         sections = []
         for genre in GENRES:
             matches = [c for c in subset if genre in c['genres']]
             pages = max(1, math.ceil(len(matches)/row_size))
             slug = genre.lower()
             doc = {'genre':genre,'slug':slug,'total':len(matches),'pages':pages,'page':1,
-                   'items':matches[:row_size],'chronological':all(c.get('added_at') for c in matches)}
+                   'items':matches[:row_size],'chronological':all(c.get('added_at') for c in matches),**date_fields}
             sections.append(doc)
             for page in range(1,pages+1):
                 write(out/'categories'/scope/slug/f'page-{page}.json',
                       {**doc,'page':page,'items':matches[(page-1)*row_size:page*row_size]})
         write(out/'browse'/f'{scope}.json',{'schema_version':1,'generated_at':now.isoformat(),
-              'sections':sections,'hero':[c for c in subset if 'Adult' not in c['genres']][:6]})
+              'sections':sections,'hero':[c for c in subset if 'Adult' not in c['genres']][:6],
+              'total':len(subset),**date_fields})
     for typ, name in [('movie','movies'),('tv','tv')]:
         # A minimum voting sample avoids ranking a one-vote title above established titles.
         ranked = [c for c in cards if c['type']==typ and c.get('rating') is not None and (c.get('votes') or 0)>=1000]
