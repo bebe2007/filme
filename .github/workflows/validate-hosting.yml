@@ -1,7 +1,6 @@
 name: Validate hosting synchronization
 on:
   push:
-    branches: [main]
     paths:
       - 'hosting/**'
       - '.github/workflows/validate-hosting.yml'
@@ -18,4 +17,7 @@ jobs:
           php --version
           php -l hosting/catalog-sync.php
           php -l hosting/update-catalog.php
+          php -l hosting/includes/catalog.php
+          php -l hosting/includes/card.php
+          php -l hosting/includes/title-view.php
           php hosting/test-sync.php
