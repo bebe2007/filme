@@ -29,6 +29,7 @@ csv.field_size_limit(64 * 1024 * 1024)
 
 IMDB_BASE = "https://datasets.imdbws.com"
 VSE_BASE = "https://vsembed.ru"
+ADDITION_DATES = {}
 IMDB_FILES = [
     "title.basics.tsv.gz",
     "title.ratings.tsv.gz",
@@ -255,7 +256,7 @@ def init_db(path: Path) -> sqlite3.Connection:
         );
 
         CREATE TABLE episodes(
-          ep_tconst TEXT PRIMARY KEY,
+          ep_tconst TEXT UNIQUE,
           parent_imdb TEXT NOT NULL,
           season INTEGER NOT NULL,
           episode INTEGER NOT NULL,
@@ -264,7 +265,8 @@ def init_db(path: Path) -> sqlite3.Connection:
           year INTEGER,
           runtime INTEGER,
           rating REAL,
-          votes INTEGER
+          votes INTEGER,
+          PRIMARY KEY(parent_imdb,season,episode)
         );
         CREATE INDEX idx_episodes_parent ON episodes(parent_imdb, season, episode);
 
@@ -359,10 +361,10 @@ def import_episode_map(con: sqlite3.Connection, path: Path) -> None:
             if ep:
                 batch.append((ep, parent, season, episode))
                 if len(batch) >= 5000:
-                    cur.executemany("INSERT OR REPLACE INTO episodes(ep_tconst,parent_imdb,season,episode) VALUES(?,?,?,?)", batch)
+                    cur.executemany("INSERT INTO episodes(ep_tconst,parent_imdb,season,episode) VALUES(?,?,?,?) ON CONFLICT(parent_imdb,season,episode) DO UPDATE SET ep_tconst=excluded.ep_tconst", batch)
                     n += len(batch); batch.clear()
         if batch:
-            cur.executemany("INSERT OR REPLACE INTO episodes(ep_tconst,parent_imdb,season,episode) VALUES(?,?,?,?)", batch); n += len(batch)
+            cur.executemany("INSERT INTO episodes(ep_tconst,parent_imdb,season,episode) VALUES(?,?,?,?) ON CONFLICT(parent_imdb,season,episode) DO UPDATE SET ep_tconst=excluded.ep_tconst", batch); n += len(batch)
         con.commit()
     finally:
         f.close()
@@ -508,6 +510,7 @@ def title_to_card(row, include_detail=False):
     # Listing/genre/year payloads also carry compact factual fields used by the
     # Bratu Marian site for same-type recommendations and richer cards. Search
     # buckets stay compact because they are repeated across many prefixes.
+    if ADDITION_DATES.get(imdb_id): card["site_added_at"] = ADDITION_DATES[imdb_id]
     if include_detail:
         card["end_year"] = end_year
         card["runtime"] = runtime
@@ -590,6 +593,8 @@ def load_editorial_overrides(path: Path):
 
 def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> None:
     editorial=editorial or {}
+    from provider_sync import read
+    addition_history=read(out/"catalog-history.json").get("items",{})
     log("Construiesc paginile virtuale / title shards")
     all_ids=[r[0] for r in con.execute("SELECT imdb_id FROM titles ORDER BY imdb_id")]
     groups=defaultdict(list)
@@ -627,7 +632,9 @@ def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> No
                 "imdb_id":imdb,"type":typ,"title":ro or title or imdb,"romanian_title":ro,"original_title":orig,
                 "year":year,"end_year":end_year,"runtime":runtime,"genres":genres.split(',') if genres else [],"rating":rating,"votes":votes,
                 "directors":crew.get(imdb,{}).get('director',[]),"writers":crew.get(imdb,{}).get('writer',[]),"cast":cast,"credits":other,
-                "seasons":seasons,"total_episodes":sum(len(x['episodes_data']) for x in seasons) if seasons else None
+                "seasons":seasons,"total_episodes":sum(len(x['episodes_data']) for x in seasons) if seasons else None,
+                "site_added_at":addition_history.get(imdb,{}).get("site_added_at"),
+                "provider_added_at":addition_history.get(imdb,{}).get("provider_added_at")
             }
             if imdb in editorial:
                 shard[imdb]["editorial"]=editorial[imdb]
@@ -811,6 +818,11 @@ def build_latest_feeds(con: sqlite3.Connection, out: Path, limit: int = 70) -> N
 def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=None, presentation_state=None) -> None:
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
+    from catalog_presentation import build_presentation
+    from provider_sync import read
+    build_presentation(con,out,presentation_state or Path('.catalog-cache/presentation.json'),fetch_json_document)
+    global ADDITION_DATES
+    ADDITION_DATES = {k:v.get('site_added_at') for k,v in read(out/'catalog-history.json').get('items',{}).items() if v.get('site_added_at')}
     log("Generez catalogul paginat")
     movies_total,_=page_query(con,"type='movie'",(),page_size,out/'movies')
     tv_total,_=page_query(con,"type='tv'",(),page_size,out/'tv')
@@ -835,8 +847,6 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
         "source_note":"Catalog membership follows the provider ID lists; factual metadata fields are populated only when present in the imported datasets."
     })
     build_latest_feeds(con,out,page_size)
-    from catalog_presentation import build_presentation
-    build_presentation(con,out,presentation_state or Path('.catalog-cache/presentation.json'),fetch_json_document)
     meta_path=out/'meta.json'
     meta=json.loads(meta_path.read_text(encoding='utf-8'))
     meta['presentation_feeds']=True
@@ -861,10 +871,13 @@ def main():
 
     # VSE determines catalog membership, so check it first. A temporary provider
     # outage can fall back to the most recent validated ID lists restored by Actions cache.
+    from provider_sync import merge_id_history,collect,publish_indexes,write as sync_write
     for fn,url in VSE_FILES.items():
         validator=lambda p, filename=fn: validate_vse_list(p, filename)
         download(url,downloads/fn,args.force_download,attempts=5,fallback=vse_cache/fn,validator=validator)
         shutil.copy2(downloads/fn,vse_cache/fn)
+
+    merge_id_history(downloads,vse_cache,VSE_FILES)
 
     # IMDb files are large; only start downloading them after VSE lists are available.
     for fn in IMDB_FILES:
@@ -873,6 +886,14 @@ def main():
     db=work/'catalog.sqlite'; con=init_db(db)
     try:
         import_provider(con,downloads)
+        snapshots,sync_report,provider_metadata=collect(con,vse_cache,fetch_json_document)
+        if any(not r['complete'] or r['unresolved'] for r in sync_report.values()):
+            raise RuntimeError('Provider latest sync incomplete; previous publication retained: '+json.dumps(sync_report))
+        source_fetch=fetch_json_document
+        def snapshot_fetch(url,**kwargs):
+            if url.startswith(VSE_BASE+'/') and '/latest/' in url:return snapshots.get(url)
+            return source_fetch(url,**kwargs)
+        globals()['fetch_json_document']=snapshot_fetch
         import_episode_map(con,downloads/'title.episode.tsv.gz')
         import_basics(con,downloads/'title.basics.tsv.gz')
         import_ratings(con,downloads/'title.ratings.tsv.gz')
@@ -882,6 +903,8 @@ def main():
         import_people(con,downloads/'name.basics.tsv.gz')
         editorial=load_editorial_overrides(Path(args.editorial).resolve())
         build_output(con,out,args.page_size,editorial,vse_cache/'presentation.json')
+        sync_write(out/'provider-sync-status.json',sync_report)
+        publish_indexes(con,out)
     finally:
         con.close()
     log(f"Gata. Date: {out}")
@@ -889,4 +912,5 @@ def main():
 
 if __name__=='__main__':
     main()
+
 

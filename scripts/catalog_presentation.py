@@ -170,7 +170,7 @@ def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None, re
         imdb,typ,title,original,ro,year,runtime,genres,rating,votes,added = row
         c = {'imdb_id':imdb,'type':typ,'title':ro or title or imdb,'original_title':original,
              'romanian_title':ro,'year':year,'runtime':runtime,'genres':genres.split(',') if genres else [],
-             'rating':rating,'votes':votes,'added_at':added}
+             'rating':rating,'votes':votes,'added_at':added,'site_added_at':history[imdb].get('site_added_at')}
         if history[imdb].get('poster'):
             c['poster'] = history[imdb]['poster']
         cards.append(c)
@@ -213,3 +213,4 @@ def build_presentation(con, out, state_path, fetch, max_pages=4000, now=None, re
     write(out/'daily.json',{'date':local_today.isoformat(),'timezone':'Europe/Bucharest',
           'generated_at':now.isoformat(),'verified':bool(baseline['verified']),
           'basis':'catalog_membership_since_previous_day',**counts})
+
