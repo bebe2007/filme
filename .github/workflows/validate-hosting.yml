@@ -1,0 +1,21 @@
+name: Validate hosting synchronization
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hosting/**'
+      - '.github/workflows/validate-hosting.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate PHP syntax and factual date labels
+        run: |
+          php --version
+          php -l hosting/catalog-sync.php
+          php -l hosting/update-catalog.php
+          php hosting/test-sync.php
