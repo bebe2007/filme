@@ -19,7 +19,7 @@ $catalogFilters=null;$catalogDoc=null;
 $homeMovies=[];$homeTv=[];$homeFeatured=[];$homeMovieTop=[];$homeTvTop=[];
 
 if($route==='catalog'){
- $catalogFilters=catalog_filters();$catalogDoc=filtered_catalog($catalogFilters,$page);$items=$catalogDoc['items'];$total=$catalogDoc['total'];$pages=$catalogDoc['pages'];$heading='Explorează catalogul';$subheading='Alege după gen, an și rating.';$canonical=site_url(catalog_link($catalogFilters,$page));$robots='noindex,follow';
+ $catalogFilters=catalog_filters();$catalogDoc=filtered_catalog($catalogFilters,$page);$items=$catalogDoc['items'];$total=$catalogDoc['total'];$pages=$catalogDoc['pages'];$heading=($catalogFilters['adaugate']??'')==='azi'?($catalogFilters['tip']==='tv'?'Seriale adăugate astăzi':($catalogFilters['tip']==='movies'?'Filme adăugate astăzi':'Filme și seriale adăugate astăzi')):'Explorează catalogul';$subheading='Alege după gen, an și rating.';$canonical=site_url(catalog_link($catalogFilters,$page));$robots='noindex,follow';
  }elseif(in_array($route,['home','movies','tv'],true)){
     $scope=$route==='home'?'all':($route==='tv'?'tv':'movies');$browseDoc=['recent'=>true];
     if($route==='home'){

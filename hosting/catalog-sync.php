@@ -37,5 +37,13 @@ function catalog_daily_footer() {
     $movieWords=$movies===1?'film':(($movies>=20&&($movies%100===0||$movies%100>=20))?'de filme':'filme');
     $tvWords=$tv===1?'serial':(($tv>=20&&($tv%100===0||$tv%100>=20))?'de seriale':'seriale');
     $first=$movies===1?'Astăzi a fost adăugat pe site ':'Astăzi au fost adăugate pe site ';
-    return '<p>'.$first.'<strong>'.ro_number($movies).'</strong> '.$movieWords.'</p><p>Astăzi site-ul a fost actualizat cu <strong>'.ro_number($tv).'</strong> '.$tvWords.'</p>';
+    $movieIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4"/></svg>';
+    $tvIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="m8 3 4 4 4-4"/></svg>';
+    return '<p><a class="catalog-daily-link" href="/catalog/?tip=movies&amp;adaugate=azi">'.$movieIcon.'<span>'.$first.'<span class="catalog-daily-count">'.ro_number($movies).'</span> '.$movieWords.'</span></a></p><p><a class="catalog-daily-link" href="/catalog/?tip=tv&amp;adaugate=azi">'.$tvIcon.'<span>Astăzi site-ul a fost actualizat cu <span class="catalog-daily-count">'.ro_number($tv).'</span> '.$tvWords.'</span></a></p>';
+}
+
+function catalog_added_today($raw) {
+    if(!is_string($raw)||!preg_match('/^\d{4}-\d{2}-\d{2}T/',$raw))return false;
+    try {$zone=new DateTimeZone('Europe/Bucharest');return (new DateTimeImmutable($raw))->setTimezone($zone)->format('Y-m-d')===(new DateTimeImmutable('now',$zone))->format('Y-m-d');}
+    catch(Exception $e){return false;}
 }

@@ -7,7 +7,7 @@ function catalog_filters() {
  if(!in_array($sort,['recent','rating','year'],true))$sort='recent';
  if(!isset(genre_map()[$genre]))$genre='';
  $from=max(1880,min(2100,(int)(query_string('de')?:'1880')));$to=max($from,min(2100,(int)(query_string('pana')?:'2100')));
- return ['tip'=>$type,'gen'=>$genre,'de'=>$from,'pana'=>$to,'nota'=>max(0,min(10,(float)query_string('nota','0'))),'sort'=>$sort,'q'=>substr(trim(query_string('q')),0,200)];
+ return ['adaugate'=>query_string('adaugate','')==='azi'?'azi':'','tip'=>$type,'gen'=>$genre,'de'=>$from,'pana'=>$to,'nota'=>max(0,min(10,(float)query_string('nota','0'))),'sort'=>$sort,'q'=>substr(trim(query_string('q')),0,200)];
 }
 function catalog_link($filters=[],$page=1) {
  $params=array_filter($filters,static function($v,$k){return !($v===''||($k==='tip'&&$v==='all')||($k==='de'&&(int)$v===1880)||($k==='pana'&&(int)$v===2100)||($k==='nota'&&(float)$v===0)||($k==='sort'&&$v==='recent'));},ARRAY_FILTER_USE_BOTH);
@@ -21,6 +21,7 @@ function filtered_catalog($f,$page=1,$per=36) {
  $per=max(1,min(200,(int)$per));$page=max(1,min(100000,(int)$page));$offset=($page-1)*$per;$total=0;$items=[];$needle=normalize_text($f['q']);
  while(!gzeof($handle)){
   $line=gzgets($handle);if($line===false)break;$r=json_decode($line,true);if(!is_array($r)||count($r)<11)continue;
+  if(($f['adaugate']??'')==='azi'&&!catalog_added_today($r[13]??null))continue;
   if($f['tip']!=='all'&&($r[1]==='tv'?'tv':'movies')!==$f['tip'])continue;
   if($f['gen']!==''&&!in_array($f['gen'],explode('|',$r[7]),true))continue;
   if(($f['de']>1880||$f['pana']<2100)&&((int)$r[4]<$f['de']||(int)$r[4]>$f['pana']))continue;

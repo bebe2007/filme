@@ -13,8 +13,15 @@ function catalog_json($path,$ttl=null){global $testDaily;return $testDaily;}
 $today=(new DateTimeImmutable('now',new DateTimeZone('Europe/Bucharest')))->format('Y-m-d');
 $testDaily=['date'=>$today,'verified'=>true,'movies'=>82,'tv'=>16];
 $footer=catalog_daily_footer();
-check(str_contains($footer,'<strong>82</strong> de filme'),'Verified movie footer count');
-check(str_contains($footer,'<strong>16</strong> seriale'),'Verified TV footer count');
+check(str_contains($footer,'82</span> de filme'),'Verified movie footer count');
+check(str_contains($footer,'16</span> seriale'),'Verified TV footer count');
 $testDaily=['date'=>'2000-01-01','verified'=>true,'movies'=>0,'tv'=>0];
-check(!str_contains(catalog_daily_footer(),'<strong>0</strong>'),'Stale counts are not presented as zero today');
+check(!str_contains(catalog_daily_footer(),'0</span>'),'Stale counts are not presented as zero today');
 echo "Footer counts verified\n";
+
+check(str_contains($footer,'tip=movies&amp;adaugate=azi'),'Movie daily link');
+check(str_contains($footer,'tip=tv&amp;adaugate=azi'),'TV daily link');
+check(substr_count($footer,'<svg')===2,'Two footer icons');
+check(catalog_added_today((new DateTimeImmutable('now'))->format(DateTimeInterface::ATOM)),'Today inclusion');
+check(!catalog_added_today('2000-01-01T12:00:00Z'),'Historical exclusion');
+check(!catalog_added_today(null),'Unknown date exclusion');

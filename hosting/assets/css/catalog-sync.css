@@ -15,3 +15,9 @@
 .catalog-back-top:focus-visible{outline:2px solid #fff;outline-offset:4px}
 @media(max-width:600px){.catalog-back-top{right:14px;bottom:18px}.catalog-added-date{font-size:10px!important}.cinema-card-v14 .catalog-poster-play>span{width:44px;height:44px}}
 @media(prefers-reduced-motion:reduce){.catalog-back-top,.catalog-poster-play,.catalog-poster-play>span{transition:none!important}}
+
+.catalog-footer-stats .catalog-daily-link{display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none;font-size:12px;line-height:1.6}
+.catalog-footer-stats .catalog-daily-link>svg{width:15px;height:15px;flex:0 0 15px}
+.catalog-footer-stats .catalog-daily-link span,.catalog-footer-stats .catalog-daily-count{font-size:inherit!important;font-weight:400!important;line-height:inherit!important;color:inherit}
+.catalog-footer-stats .catalog-daily-link:hover{text-decoration:underline;text-underline-offset:3px}
+.catalog-footer-stats .catalog-daily-link:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:2px}
