@@ -21,5 +21,21 @@ function catalog_added_label(array $item) {
 }
 function catalog_added_badge(array $item) {
     $label=catalog_added_label($item);if($label==='')return '';
-    return '<span class="catalog-added-date" style="display:flex;align-items:center;gap:.35em;font-size:.75rem;line-height:1.45;opacity:.82;margin:.35rem 0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" style="flex-shrink:0"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg><time datetime="'.htmlspecialchars($item['site_added_at'],ENT_QUOTES,'UTF-8').'">'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'</time></span>';
+    return '<span class="catalog-added-date"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg><time datetime="'.htmlspecialchars($item['site_added_at'],ENT_QUOTES,'UTF-8').'">'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'</time></span>';
+}
+
+function catalog_daily_footer() {
+    $root=dirname(__DIR__).'/data/catalog-sync/current.json';
+    $state=is_file($root)?json_decode((string)@file_get_contents($root),true):null;
+    $daily=is_array($state)?($state['daily']??null):null;
+    $today=(new DateTimeImmutable('now',new DateTimeZone('Europe/Bucharest')))->format('Y-m-d');
+    if(!is_array($daily)||($daily['date']??'')!==$today)$daily=catalog_json('daily.json',60);
+    if(!is_array($daily)||($daily['verified']??false)!==true||($daily['date']??'')!==$today||!isset($daily['movies'],$daily['tv'])||!is_int($daily['movies'])||!is_int($daily['tv'])||$daily['movies']<0||$daily['tv']<0) {
+        return '<p>Adăugările de astăzi sunt în curs de verificare.</p><p>Numărul filmelor și serialelor va fi afișat după importul verificat.</p>';
+    }
+    $movies=$daily['movies'];$tv=$daily['tv'];
+    $movieWords=$movies===1?'film':(($movies>=20&&($movies%100===0||$movies%100>=20))?'de filme':'filme');
+    $tvWords=$tv===1?'serial':(($tv>=20&&($tv%100===0||$tv%100>=20))?'de seriale':'seriale');
+    $first=$movies===1?'Astăzi a fost adăugat pe site ':'Astăzi au fost adăugate pe site ';
+    return '<p>'.$first.'<strong>'.ro_number($movies).'</strong> '.$movieWords.'</p><p>Astăzi site-ul a fost actualizat cu <strong>'.ro_number($tv).'</strong> '.$tvWords.'</p>';
 }

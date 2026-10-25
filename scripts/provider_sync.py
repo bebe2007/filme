@@ -105,5 +105,5 @@ def publish_indexes(con,out):
  if meta['episodes']!=meta['provider_episodes']:raise ValueError('Episode membership mismatch')
  write(out/'meta.json',meta)
  release=hashlib.sha256(json.dumps(files,sort_keys=True).encode()).hexdigest()[:24]
- write(folder/'manifest.json',{'schema':1,'release':release,'generated_at':meta['generated_at'],'total':len(rows),'movies':meta['movies'],'tv':meta['tv'],'episodes':meta['episodes'],'files':files})
+ write(folder/'manifest.json',{'schema':1,'release':release,'generated_at':meta['generated_at'],'total':len(rows),'movies':meta['movies'],'tv':meta['tv'],'episodes':meta['episodes'],'daily':read(out/'daily.json'),'files':files})
  return meta

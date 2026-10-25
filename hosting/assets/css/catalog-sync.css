@@ -1,0 +1,17 @@
+.catalog-added-date{display:flex;align-items:center;gap:.35em;font-size:10px!important;font-weight:400;line-height:1.45;opacity:.8;margin:.2rem 0 .45rem;color:inherit}
+.catalog-added-date time{font:inherit!important;letter-spacing:normal!important;text-transform:none!important}
+.catalog-added-date>svg{width:12px;height:12px;flex-shrink:0}
+.cinema-card-v14 .poster{position:relative}
+.cinema-card-v14 .catalog-poster-play{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.28);opacity:0;transition:opacity .18s ease;pointer-events:none}
+.cinema-card-v14 .catalog-poster-play>span{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:rgba(235,246,240,.95);color:#102219;box-shadow:0 6px 24px #0007;transform:scale(.86);transition:transform .18s ease}
+.cinema-card-v14 .catalog-poster-play svg{margin-left:3px}
+.cinema-card-v14 .poster:hover .catalog-poster-play,.cinema-card-v14 .movie-card-link:focus-visible .catalog-poster-play{opacity:1}
+.cinema-card-v14 .poster:hover .catalog-poster-play>span,.cinema-card-v14 .movie-card-link:focus-visible .catalog-poster-play>span{transform:scale(1)}
+.catalog-footer-stats p{margin:0 0 .45rem;font-size:12px;line-height:1.6;color:inherit}
+.catalog-footer-stats strong{font-size:inherit;color:inherit}
+.catalog-back-top{position:fixed;right:22px;bottom:22px;z-index:900;display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #bcd8c44d;border-radius:50%;background:#dcebe0;color:#14231a;box-shadow:0 4px 18px #0005;cursor:pointer;transition:transform .15s ease,background .15s ease}
+.catalog-back-top[hidden]{display:none!important}
+.catalog-back-top:hover{background:#eff8f1;transform:translateY(-2px)}
+.catalog-back-top:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@media(max-width:600px){.catalog-back-top{right:14px;bottom:18px}.catalog-added-date{font-size:10px!important}.cinema-card-v14 .catalog-poster-play>span{width:44px;height:44px}}
+@media(prefers-reduced-motion:reduce){.catalog-back-top,.catalog-poster-play,.catalog-poster-play>span{transition:none!important}}

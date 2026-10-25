@@ -20,4 +20,6 @@ jobs:
           php -l hosting/includes/catalog.php
           php -l hosting/includes/card.php
           php -l hosting/includes/title-view.php
+          php -l hosting/index.php
           php hosting/test-sync.php
+          node --check hosting/assets/js/catalog-sync-ui.js
