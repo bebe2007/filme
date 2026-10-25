@@ -21,3 +21,12 @@
 .catalog-footer-stats .catalog-daily-link span,.catalog-footer-stats .catalog-daily-count{font-size:inherit!important;font-weight:400!important;line-height:inherit!important;color:inherit}
 .catalog-footer-stats .catalog-daily-link:hover{text-decoration:underline;text-underline-offset:3px}
 .catalog-footer-stats .catalog-daily-link:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:2px}
+
+.catalog-subtitle-notice{margin-top:22px;padding:18px 20px;border:1px solid #bed8c226;border-radius:14px;background:#ffffff04;max-width:780px}
+.catalog-subtitle-heading{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
+.catalog-subtitle-heading>svg{width:19px;height:19px;flex:0 0 19px;margin-top:2px;color:#c6dacc}
+.catalog-subtitle-notice h2{font-size:15px!important;line-height:1.5;margin:0!important;letter-spacing:normal;text-transform:none}
+.catalog-subtitle-notice p{font-size:13px;line-height:1.75;color:#b7bdc6;margin:0 0 12px}
+.catalog-subtitle-notice strong{font-size:inherit!important;color:inherit}
+.catalog-subtitle-notice .catalog-subtitle-saving-note{font-size:11px;line-height:1.6;margin:12px 0 0;color:#929ba8}
+@media(max-width:600px){.catalog-subtitle-notice{padding:15px;margin-top:18px}}
