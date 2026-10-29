@@ -15,6 +15,7 @@ jobs:
       - name: Validate PHP syntax and factual date labels
         run: |
           php --version
+          php -l hosting/includes/collections.php
           php -l hosting/catalog-sync.php
           php -l hosting/update-catalog.php
           php -l hosting/includes/catalog.php
@@ -24,4 +25,5 @@ jobs:
           php -l hosting/includes/header.php
           php -l hosting/index.php
           php hosting/test-sync.php
+          php hosting/test-collections.php
           node --check hosting/assets/js/catalog-sync-ui.js
