@@ -13,7 +13,10 @@ Copiază conținutul acestui director, inclusiv `.htaccess`, în rădăcina publ
 - `assets/img/logo-cinema.svg`: logo vectorial Bratu Marian.
 - `assets/img/favicon-cinema.svg`: simbolul pentru tab.
 - `assets/img/cinema-banner.webp`: bannerul furnizat de proprietar, optimizat pentru web.
-- `assets/css/cinema-gold.css`: tema responsive cu accente aurii și suport reduced-motion.
+- `assets/css/cinema-gold.css`: baza vizuală cu accente aurii.
+- `assets/css/cinema-premiere.css`: carduri verticale responsive, fundaluri pe toată lățimea și suport reduced-motion.
+
+Pagina principală afișează direct grila sub banner, fără caruselul mare. Fiecare pagină are un fundal decorativ: imaginea titlului pentru filme și seriale, prima imagine disponibilă în liste, respectiv bannerul ca rezervă. Straturile întunecate protejează lizibilitatea. Antetul rămâne în fluxul paginii pentru a nu acoperi informațiile.
 
 Descrierile românești verificate sunt în `editorial/overrides.json` la rădăcina repository-ului. `includes/editorial.php` oferă și variante pe server pentru titlurile verificate. Restul descrierilor păstrează limba sursei; nu sunt inventate sinopsisuri sau recenzii personale.
 

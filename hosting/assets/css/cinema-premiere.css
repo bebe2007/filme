@@ -1,0 +1,82 @@
+/* Bratu Marian — cinematic backgrounds and poster-led catalogue. */
+body.cinema-premiere{isolation:isolate;background:#080a0f;color:#f6f1e8;position:relative;min-height:100vh;overflow-x:clip}
+.cinema-premiere .page-scenery{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:#080a0f}
+.cinema-premiere .page-scenery img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 24%;opacity:.44;filter:saturate(.72);transform:none}
+.cinema-premiere .page-scenery:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#080a0f92,#080a0f4d 55%,#080a0f80),linear-gradient(0deg,#080a0fe8,#080a0f38 75%)}
+.cinema-premiere.route-home .page-scenery img{object-position:center;opacity:.34}
+.cinema-premiere.route-movies .page-scenery img{opacity:.38;object-position:65% 30%}
+.cinema-premiere.route-tv .page-scenery img{opacity:.38;object-position:35% 25%}
+.cinema-premiere .site-header{position:relative;top:auto;inset-inline:auto;z-index:70;transform:none;background:#090b11e8;border-bottom:1px solid #dec38d24;box-shadow:0 8px 28px #0003}
+.cinema-premiere .skip-link{top:-150px;transform:translateY(-150%);background:#ebcc93;color:#161109}
+.cinema-premiere .skip-link:focus-visible{top:12px;transform:none}
+.cinema-premiere .wrap{max-width:1480px;width:calc(100% - 80px)}
+.cinema-premiere .cinema-brand-banner{margin:28px 0 12px;border-color:#d6b37142;box-shadow:0 18px 55px #0005}
+.cinema-premiere .collection-section{padding-top:30px;background:none}
+.cinema-premiere .collection-section-head{align-items:end;margin-bottom:24px}
+.cinema-premiere .collection-section-head h1,.cinema-premiere .collection-section-head h2{font:400 clamp(29px,3vw,42px)/1.15 Georgia,serif;color:#fff2db;letter-spacing:-.6px;margin:7px 0 10px}
+.cinema-premiere .collection-intro{background:none}
+/* One card system across home, browse, search, filmographies and related titles. */
+.cinema-premiere .movie-grid.cinema-grid-v14{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:28px 22px;align-items:stretch}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card{min-width:0;position:relative;overflow:hidden;border-radius:16px;background:linear-gradient(145deg,#1b1d25f5,#0e1018fa);border:1px solid #e5c68b25;box-shadow:0 12px 28px #0005;transition:transform .35s,border-color .35s,box-shadow .35s}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .movie-card-link{display:flex;flex-direction:column;height:100%;min-height:0;grid-template-columns:none;color:inherit;text-decoration:none}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .poster{position:relative;display:block;width:100%;aspect-ratio:2/3;height:auto;min-height:0;overflow:hidden;border-radius:0;margin:0;background:#181b23;isolation:isolate}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .poster>img{display:block;width:100%;height:100%;aspect-ratio:2/3;object-fit:cover;border-radius:0;transform:none;transition:transform .7s cubic-bezier(.18,.65,.3,1),filter .4s}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .poster:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#11131b 0%,#11131b18 20%,transparent 50%,#080a0d44 100%)}
+.cinema-premiere .premiere-type{position:absolute;top:13px;left:13px;z-index:2;background:#10131cda;border:1px solid #ffffff30;border-radius:6px;padding:4px 8px;font-size:9px;font-weight:700;line-height:1.5;text-transform:uppercase;letter-spacing:1.4px;color:#f1e7d8;backdrop-filter:blur(12px)}
+.cinema-premiere .premiere-rating{position:absolute;right:12px;bottom:13px;z-index:2;display:flex;gap:5px;align-items:center;padding:5px 8px;background:#17150fe8;border:1px solid #e5c18555;border-radius:6px;color:#f0ce8c;font-size:12px;line-height:1.5;box-shadow:0 4px 12px #0005}
+.cinema-premiere .premiere-rating svg{width:12px;height:12px;fill:#d3ab5d33}
+.cinema-premiere .premiere-rating small{font-size:8px;letter-spacing:.3px;color:#d3c0a0}
+.cinema-premiere .premiere-poster-action{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;opacity:0;background:#080b1344;transition:opacity .3s}
+.cinema-premiere .premiere-poster-action>span{width:58px;height:58px;border-radius:50%;border:1px solid #f3d6a1;background:#e4bd7ce8;color:#211509;display:grid;place-items:center;box-shadow:0 8px 32px #0006;transform:translateY(7px);transition:transform .3s}
+.cinema-premiere .premiere-poster-action svg{width:23px;height:23px}
+.cinema-premiere .premiere-poster-action b{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#fff5e5}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-body{padding:10px 17px 17px;display:flex;flex-direction:column;justify-content:flex-start;min-height:0;gap:0;flex:1;min-width:0;background:none}
+.cinema-premiere .premiere-facts{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:#aaaeba;font-size:10px;line-height:1.5;margin-bottom:9px}
+.cinema-premiere .premiere-facts>span{display:flex;gap:4px;align-items:center}
+.cinema-premiere .premiere-facts svg{width:11px;height:11px}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-title{font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.35;letter-spacing:-.25px;color:#fff5e4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em;margin:0 0 12px;text-wrap:pretty;overflow-wrap:anywhere}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-genres{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 13px;padding:0;font-size:9px;color:#c9bdac}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-genres span{font-size:9px;line-height:1.5;padding:3px 6px;border-radius:4px;background:#dec18809;border:1px solid #dec18822}
+.cinema-premiere .premiere-summary{font-size:11px;line-height:1.65;color:#b3b7c1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0 0 12px}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card-bottom{margin-top:auto;padding-top:12px;border-top:1px solid #e7c99218;display:flex;flex-direction:column;gap:10px}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card-bottom .catalog-added-date{font-size:9px;line-height:1.5;color:#9d9da8;margin:0;display:flex;gap:5px;align-items:start}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card-bottom .catalog-added-date svg{flex-shrink:0;width:11px;height:11px;margin-top:1px}
+.cinema-premiere .premiere-detail-link{display:flex;align-items:center;justify-content:space-between;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#e4c28a;font-weight:600}
+.cinema-premiere .premiere-detail-link svg{width:17px;height:17px;transition:transform .3s}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card>.favorite-toggle{top:12px;right:12px;bottom:auto;z-index:5;background:#10131cdd;border:1px solid #e4c58b55;color:#edcd93;width:33px;height:33px;opacity:1}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:focus-within{border-color:#e7c78c;box-shadow:0 14px 40px #0008}
+@media(hover:hover){body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover{transform:translateY(-7px);border-color:#dfbc7b99;box-shadow:0 20px 46px #0009,0 0 28px #d0a3560c}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover .poster>img{transform:scale(1.065);filter:brightness(.82)}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover .premiere-poster-action,body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:focus-within .premiere-poster-action{opacity:1}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover .premiere-poster-action>span{transform:none}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover .premiere-detail-link svg{transform:translateX(3px)}}
+/* The actual title image fills the viewport; the copy is protected by dark gradients. */
+.cinema-premiere.route-title .page-scenery img{opacity:.62;object-position:center 20%;filter:saturate(.8)}
+.cinema-premiere.route-title .page-scenery:after{background:linear-gradient(90deg,#080a0f80,#080a0f5c 50%,#080a0f99),linear-gradient(0deg,#080a0fe8,#080a0f33 90%)}
+.cinema-premiere .title-page{isolation:auto;position:relative;padding:36px 0 50px;background:none}
+.cinema-premiere .cinema-hero{display:grid;grid-template-columns:clamp(220px,23vw,300px) minmax(0,1fr);max-width:none;gap:50px;align-items:start;margin:0;padding:34px;border-radius:20px;border:1px solid #e6c58a30;background:linear-gradient(105deg,#080b1270,#080b12bb);box-shadow:0 24px 70px #0004;backdrop-filter:blur(1px)}
+.cinema-premiere .poster-column{width:auto;grid-column:auto;grid-row:auto;padding:0;align-self:start}
+.cinema-premiere .title-poster{display:block;width:100%;height:auto;border:1px solid #f0dcb345;border-radius:13px;box-shadow:0 20px 55px #0008}
+.cinema-premiere .title-main{display:block;min-width:0}
+.cinema-premiere .title-main h1{font:400 clamp(34px,4.1vw,62px)/1.1 Georgia,serif;margin:8px 0 22px;color:#fff4e1;letter-spacing:-1.3px;text-wrap:balance;text-shadow:0 2px 20px #0008;overflow-wrap:anywhere}
+.cinema-premiere .title-meta{color:#dedbd3;line-height:1.6}
+.cinema-premiere .premium-actions{display:flex;flex-wrap:wrap;gap:11px;margin:25px 0 20px}
+.cinema-premiere .synopsis{font-size:16px;line-height:1.9;color:#ebe6dc;max-width:80ch;margin:20px 0 24px}
+.cinema-premiere .synopsis .synopsis-text{font-size:16px;line-height:1.9;color:#ebe6dc;text-shadow:0 1px 8px #0009}
+.cinema-premiere .title-details{border-top:1px solid #e0c28c33;padding-top:20px;color:#f0e8dd}
+.cinema-premiere .catalog-subtitle-notice{background:#080b12a8;border-color:#dfc28c30;color:#d4d5dc;margin-top:22px}
+.cinema-premiere .detail-section{padding-top:36px;background:none}
+.cinema-premiere .detail-section>.section-head{padding:14px 0;text-shadow:0 2px 12px #000}
+.cinema-premiere .episode,.cinema-premiere .cast-card{background:#10131ce8;border-color:#e2c58d22}
+.cinema-premiere .breadcrumbs{padding:22px 0 0;color:#c7c4c0;text-shadow:0 1px 8px #000}
+.cinema-premiere .site-footer{background:#080a10d9;border-color:#e7c99224}
+@media(min-width:1700px){.cinema-premiere .movie-grid.cinema-grid-v14{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:1200px){.cinema-premiere .wrap{width:calc(100% - 48px)}.cinema-premiere .movie-grid.cinema-grid-v14{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px}.cinema-premiere .cinema-hero{gap:30px;padding:27px}}
+@media(max-width:950px){.cinema-premiere .movie-grid.cinema-grid-v14{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 18px}.cinema-premiere .cinema-hero{grid-template-columns:200px minmax(0,1fr);gap:26px}.cinema-premiere .title-main h1{font-size:38px}}
+@media(max-width:700px){.cinema-premiere .wrap{width:calc(100% - 28px)}.cinema-premiere .movie-grid.cinema-grid-v14{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 13px}.cinema-premiere .cinema-brand-banner{margin-top:17px}.cinema-premiere .collection-section-head h1,.cinema-premiere .collection-section-head h2{font-size:30px}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-body{padding:9px 12px 14px}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-title{font-size:15px}.cinema-premiere .cinema-hero{display:flex;flex-direction:column;padding:22px;gap:25px}.cinema-premiere .poster-column{width:180px;align-self:center}.cinema-premiere .title-main{display:block;width:100%}.cinema-premiere .title-main h1{font-size:35px;margin-top:10px}.cinema-premiere .premium-actions{display:flex;flex-wrap:wrap}.cinema-premiere .synopsis .synopsis-text{font-size:15px}.cinema-premiere .title-page{padding-top:25px}.cinema-premiere .page-scenery img{object-position:center top}.cinema-premiere .catalog-subtitle-notice{padding:15px}.cinema-premiere .collection-controls{flex-wrap:wrap}}
+@media(max-width:380px){.cinema-premiere .wrap{width:calc(100% - 22px)}.cinema-premiere .movie-grid.cinema-grid-v14{gap:17px 10px}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card{border-radius:11px}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-body{padding:8px 10px 12px}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-title{font-size:13px}.cinema-premiere .premiere-facts{font-size:9px;gap:6px}.cinema-premiere .premiere-type{left:9px;top:9px;font-size:8px}.cinema-premiere .premiere-rating{right:8px;bottom:10px;padding:4px 6px;gap:3px}.cinema-premiere .premiere-rating small{display:none}.cinema-premiere .cinema-hero{padding:18px}.cinema-premiere .title-main h1{font-size:30px}}
+@media(prefers-reduced-motion:reduce){.cinema-premiere *, .cinema-premiere *:before,.cinema-premiere *:after{animation:none!important;transition:none!important}body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover,body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card:hover .poster>img{transform:none}}
+
+/* Explicit sizing prevents legacy horizontal-card rules from stretching the poster. */
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .poster{flex:0 0 auto;height:auto;min-height:0;aspect-ratio:2/3;align-self:auto}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .poster>img{position:absolute;inset:0;min-height:0;width:100%;height:100%;object-fit:cover;opacity:1;visibility:visible}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-body{flex:1 0 auto;height:auto;min-height:200px}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-title{flex-shrink:0;display:block;min-height:2.7em;max-height:2.7em}
+body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-body>*{flex-shrink:0}
+@media(max-width:700px){body.cinema-premiere.cinema-v13 .movie-card.cinema-card-v14.premiere-card .card-body{min-height:180px}}

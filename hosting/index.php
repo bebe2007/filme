@@ -94,6 +94,10 @@ if($route==='title'&&$titleItem){$schema=['@context'=>'https://schema.org','@typ
 elseif($route==='person'&&$personItem){$personSchema=['@context'=>'https://schema.org','@type'=>'Person','name'=>$personItem['name']??$personItem['nconst'],'url'=>$canonical,'sameAs'=>imdb_person_url($personItem['nconst']),'image'=>site_url(ltrim(person_image_url($personItem['nconst']),'/'))];if(!empty($personItem['birth_year']))$personSchema['birthDate']=(string)$personItem['birth_year'];if(!empty($personItem['death_year']))$personSchema['deathDate']=(string)$personItem['death_year'];$schemas[]=$personSchema;}
 elseif($items)$schemas[]=['@context'=>'https://schema.org','@type'=>'CollectionPage','name'=>$heading?:$siteName,'url'=>$canonical,'mainEntity'=>['@type'=>'ItemList','itemListElement'=>array_values(array_map(function($item,$i){return['@type'=>'ListItem','position'=>$i+1,'url'=>title_url($item),'name'=>title_name($item)];},array_slice($items,0,30),array_keys(array_slice($items,0,30))))]];
 if(!$ogImage)$ogImage=site_url('/assets/img/cinema-banner.webp');
+// Reuse already-loaded catalogue items; no extra metadata request for decoration.
+$pageSceneryItem=$titleItem?:($items[0]??($homeFeatured[0]??null));
+$pageSceneryUrl=$pageSceneryItem?item_background_url($pageSceneryItem):'/assets/img/cinema-banner.webp';
+$pageSceneryFallback=$pageSceneryItem?item_poster_url($pageSceneryItem):'/assets/img/cinema-banner.webp';
 $cssVersion=@filemtime(__DIR__.'/assets/css/app.css')?:time();$jsVersion=@filemtime(__DIR__.'/assets/js/app.js')?:time();$refinementsVersion=@filemtime(__DIR__.'/assets/css/refinements.css')?:time();
 ?>
 <!doctype html><html lang="ro"><head>
@@ -105,7 +109,9 @@ $cssVersion=@filemtime(__DIR__.'/assets/css/app.css')?:time();$jsVersion=@filemt
 <meta name="theme-color" content="#000000"><link rel="icon" href="/assets/img/favicon-cinema.svg?v=20261113" type="image/svg+xml"><link rel="preconnect" href="https://images.metahub.space" crossorigin><link rel="dns-prefetch" href="//images.metahub.space"><link rel="dns-prefetch" href="//vsembed.ru"><link rel="stylesheet" href="/assets/css/app.css?v=<?=e($cssVersion)?>"><link rel="stylesheet" href="/assets/css/refinements.css?v=<?=e($refinementsVersion)?>"><link rel="stylesheet" href="/assets/css/experience.css?v=14"><link rel="stylesheet" href="/assets/css/catalog-sync.css?v=<?=e(@filemtime(__DIR__.'/assets/css/catalog-sync.css')?:2)?>">
 <?php foreach($schemas as $schema):?><script type="application/ld+json" nonce="<?=e($cspNonce)?>"><?=safe_json($schema)?></script><?php endforeach;?>
 <link rel="stylesheet" href="/assets/css/cinema-gold.css?v=20261113.2">
-</head><body class="cinema-v9 cinema-v10 cinema-v11 cinema-v12 cinema-v13" data-version="<?=e(cfg('version'))?>" data-suggest-url="/api.php?action=suggest&q=" data-provider-origin="<?=e(parse_url(cfg('provider_base_url'),PHP_URL_SCHEME).'://'.parse_url(cfg('provider_base_url'),PHP_URL_HOST))?>">
+<link rel="stylesheet" href="/assets/css/cinema-premiere.css?v=20261113-4">
+</head><body class="cinema-v9 cinema-v10 cinema-v11 cinema-v12 cinema-v13 cinema-premiere route-<?=e($route)?>" data-version="<?=e(cfg('version'))?>" data-suggest-url="/api.php?action=suggest&q=" data-provider-origin="<?=e(parse_url(cfg('provider_base_url'),PHP_URL_SCHEME).'://'.parse_url(cfg('provider_base_url'),PHP_URL_HOST))?>">
+<div class="page-scenery" aria-hidden="true"><img src="<?=e($pageSceneryUrl)?>" data-fallback="<?=e($pageSceneryFallback)?>" alt="" referrerpolicy="no-referrer" decoding="async" fetchpriority="high"></div>
 <a class="skip-link" href="#mainContent">Sari la conținut</a>
 <?php include __DIR__.'/includes/header.php'; ?>
 
