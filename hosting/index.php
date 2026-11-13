@@ -104,7 +104,7 @@ $cssVersion=@filemtime(__DIR__.'/assets/css/app.css')?:time();$jsVersion=@filemt
 <meta name="twitter:card" content="<?=$ogImage?'summary_large_image':'summary'?>"><meta name="twitter:title" content="<?=e($seoTitle)?>"><meta name="twitter:description" content="<?=e($seoDesc)?>"><?php if($ogImage):?><meta name="twitter:image" content="<?=e($ogImage)?>"><?php endif;?>
 <meta name="theme-color" content="#000000"><link rel="icon" href="/assets/img/favicon-cinema.svg?v=20261113" type="image/svg+xml"><link rel="preconnect" href="https://images.metahub.space" crossorigin><link rel="dns-prefetch" href="//images.metahub.space"><link rel="dns-prefetch" href="//vsembed.ru"><link rel="stylesheet" href="/assets/css/app.css?v=<?=e($cssVersion)?>"><link rel="stylesheet" href="/assets/css/refinements.css?v=<?=e($refinementsVersion)?>"><link rel="stylesheet" href="/assets/css/experience.css?v=14"><link rel="stylesheet" href="/assets/css/catalog-sync.css?v=<?=e(@filemtime(__DIR__.'/assets/css/catalog-sync.css')?:2)?>">
 <?php foreach($schemas as $schema):?><script type="application/ld+json" nonce="<?=e($cspNonce)?>"><?=safe_json($schema)?></script><?php endforeach;?>
-<link rel="stylesheet" href="/assets/css/cinema-gold.css?v=20261113">
+<link rel="stylesheet" href="/assets/css/cinema-gold.css?v=20261113.2">
 </head><body class="cinema-v9 cinema-v10 cinema-v11 cinema-v12 cinema-v13" data-version="<?=e(cfg('version'))?>" data-suggest-url="/api.php?action=suggest&q=" data-provider-origin="<?=e(parse_url(cfg('provider_base_url'),PHP_URL_SCHEME).'://'.parse_url(cfg('provider_base_url'),PHP_URL_HOST))?>">
 <a class="skip-link" href="#mainContent">Sari la conținut</a>
 <?php include __DIR__.'/includes/header.php'; ?>
