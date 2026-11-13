@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /cache/
+Disallow: /tools/
+Disallow: /api.php
+Disallow: /cauta/
+
+Sitemap: https://filme.bratu-marian.com/sitemap.xml

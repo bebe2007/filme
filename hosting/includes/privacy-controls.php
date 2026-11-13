@@ -1,0 +1,14 @@
+<aside class="cookie-banner" id="cookieBanner" aria-label="Preferințe de confidențialitate" hidden>
+  <div><strong>Tu alegi ce păstrează browserul.</strong><p>Folosim stocare necesară pentru preferințe. Poți permite separat salvarea favoritelor și progresului, respectiv playerele video externe. <a href="/politica-cookie/">Detalii despre cookie-uri</a></p></div>
+  <div class="cookie-actions"><button type="button" data-consent="necessary">Doar necesare</button><button type="button" data-privacy-open>Personalizează</button><button type="button" data-consent="all">Accept toate</button></div>
+</aside>
+<dialog class="privacy-dialog" id="privacyDialog" aria-labelledby="privacyTitle">
+  <div class="privacy-heading"><div><span class="section-kicker">Confidențialitate</span><h2 id="privacyTitle">Alegerea îți aparține.</h2></div><button class="menu-close" type="button" id="privacyClose" aria-label="Închide preferințele">×</button></div>
+  <p id="mediaConsentNotice" hidden>Pentru acest video, browserul se conectează la un furnizor extern: <strong id="externalProvider"></strong>. Acesta primește adresa IP și date tehnice și poate folosi propriile cookie-uri. Site-ul nu controlează stocarea realizată în playerul extern.</p>
+  <div class="privacy-choice"><div><strong>Necesare</strong><p>Rețin alegerea ta privind confidențialitatea, timp de 180 de zile. Fără statistici sau publicitate adăugate de acest site.</p></div><span>Active</span></div>
+  <label class="privacy-choice"><div><strong>Lista mea și reluarea vizionării</strong><p>Salvează favoritele și progresul în acest browser, cel mult 180 de zile. Istoricul păstrează maximum 40 de vizionări.</p></div><input type="checkbox" id="consentFunctional"></label>
+  <label class="privacy-choice"><div><strong>Playere și trailere externe</strong><p>Permite încărcarea unui player extern când apeși redarea. Preferința se păstrează 180 de zile și poate fi retrasă oricând.</p></div><input type="checkbox" id="consentExternal"></label>
+  <p class="privacy-detail">Imaginile catalogului sunt furnizate de servere externe: la afișare, acestea primesc adresa IP și informații tehnice. Citește <a href="/politica-de-confidentialitate/">politica de confidențialitate</a> și <a href="/politica-cookie/">politica de cookie-uri</a>. Refuzul opțiunilor nu împiedică navigarea în catalog.</p>
+  <div class="privacy-buttons"><button type="button" data-consent="necessary">Doar necesare</button><button type="button" id="privacySave">Salvează alegerea</button><button type="button" id="mediaConsentAllow" hidden>Permite videourile externe și continuă</button></div>
+</dialog>
+<noscript><p class="no-script-privacy">Catalogul poate fi consultat fără JavaScript. Playerele video, căutarea cu sugestii și preferințele opționale au nevoie de JavaScript. <a href="/politica-cookie/">Politica de cookie-uri</a></p></noscript>

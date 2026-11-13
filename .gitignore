@@ -1,0 +1,8 @@
+
+# Hosting secrets and generated runtime state
+hosting/config.local.php
+hosting/cache/
+hosting/data/
+hosting/*.zip
+__pycache__/
+*.pyc

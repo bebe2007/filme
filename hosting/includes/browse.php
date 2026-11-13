@@ -1,12 +1,13 @@
 <?php require_once __DIR__.'/v14-ui.php';?>
 <?php if($route==='home'):?>
+<h1 class="cinema-home-heading">Ce vedem în seara asta?</h1>
 <?php if($homeFeatured):?>
 <section class="recent-spotlight premium-feature-v14 premium-feature-v15" aria-label="Ultimele zece filme adăugate" aria-roledescription="prezentare de filme">
 <?php foreach($homeFeatured as $n=>$feature):$featureName=title_name($feature);$featureRating=(float)($feature['rating']??0);$featureYear=(int)($feature['year']??0);$featureRuntime=(int)($feature['runtime']??0);$entries=v14_entries();$featureDirector=trim((string)($entries[$feature['imdb_id']]['director']??''));$featureSummary=v14_summary($feature);?>
 <div class="spotlight feature-slide" data-feature-slide="<?=$n?>"<?=$n?' hidden':''?> role="group" aria-label="<?=($n+1)?> din <?=count($homeFeatured)?>: <?=e($featureName)?>">
-<img class="spotlight-background" src="https://images.metahub.space/background/medium/<?=e($feature['imdb_id'])?>/img" alt="" referrerpolicy="no-referrer" decoding="async" loading="<?=$n?'lazy':'eager'?>"><div class="spotlight-shade"></div>
+<img class="spotlight-background" src="<?=e(item_background_url($feature))?>" data-fallback="<?=e(item_poster_url($feature))?>" alt="" referrerpolicy="no-referrer" decoding="async" loading="<?=$n?'lazy':'eager'?>"><div class="spotlight-shade"></div>
 <div class="spotlight-copy"><div class="v14-feature-eyebrow"><?=v14_icon('film')?><span>Recent în catalog</span><span class="v14-feature-separator" aria-hidden="true"></span><span><?=sprintf('%02d',$n+1)?> / <?=sprintf('%02d',count($homeFeatured))?></span></div>
-<p class="v14-feature-motto">Ce vedem astăzi?</p><h1><?=e($featureName)?></h1>
+<p class="v14-feature-motto">Ce vedem astăzi?</p><h2><?=e($featureName)?></h2>
 <div class="v14-feature-facts"><?php if($featureRating>0):?><a class="v14-imdb" href="https://www.imdb.com/title/<?=e($feature['imdb_id'])?>/" target="_blank" rel="noopener noreferrer" aria-label="IMDb <?=e(number_format($featureRating,1,',',''))?> din 10 pentru <?=e($featureName)?>"><?=v14_icon('star')?><strong><?=e(number_format($featureRating,1,',',''))?></strong><span>/ 10</span><small>IMDb</small></a><?php endif;?><?php if($featureYear):?><span><?=v14_icon('calendar')?><?=$featureYear?></span><?php endif;?><?php if($featureRuntime>0):?><span><?=v14_icon('clock')?><?=e(compact_duration($featureRuntime))?></span><?php endif;?></div>
 <?php $featureGenres=array_slice(public_genres($feature['genres']??[]),0,3);if($featureGenres):?><div class="v14-feature-genres"><?=v14_icon('tag')?><?php foreach($featureGenres as $g):?><span><?=e(genre_label($g))?></span><?php endforeach;?></div><?php endif;?>
 <p class="spotlight-description" data-description-ready="<?=$featureSummary!==''?'true':'false'?>"><?=e($featureSummary!==''?$featureSummary:'Vezi despre ce e vorba și alege dacă e filmul tău pentru seara asta.')?></p>

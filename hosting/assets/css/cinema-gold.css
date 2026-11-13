@@ -1,0 +1,61 @@
+/* Bratu Marian / Cinema Gold — 2026 */
+:root{color-scheme:dark;--gold:#dfbb7b;--accent:#dfbb7b;--mint:#dfbb7b;--bg:#090a0e;--text:#f4f0e8;--muted:#aaa9b2}
+body.cinema-v13{background:radial-gradient(ellipse at 85% 8%,#62412320,transparent 45%),#090a0e;color:#f4f0e8;font-family:Arial,Helvetica,sans-serif;line-height:1.6}
+.cinema-v13 .wrap{max-width:1440px;width:calc(100% - 80px)}
+.cinema-v13 .site-header{background:#090a0ee8;border-bottom:1px solid #d4ae6a24;backdrop-filter:blur(20px)}
+.cinema-v13 .header-row{min-height:92px;gap:30px}
+.cinema-v13 .brand{flex-shrink:0;display:block;min-width:0;width:255px;padding:0;background:none;border:0;box-shadow:none}
+.cinema-logo{display:block;width:100%;height:auto}
+.cinema-v13 .main-nav a{color:#ccc8c0;font-weight:500}
+.cinema-v13 .main-nav a.active,.cinema-v13 .main-nav a:hover{color:#edce94}
+.cinema-v13 .header-search{background:#15151c;border:1px solid #ffffff12;border-radius:12px}
+.cinema-brand-banner{margin:30px 0 22px;overflow:hidden;border:1px solid #cda56542;border-radius:20px;box-shadow:0 24px 80px #0005;position:relative;background:#111}
+.cinema-brand-banner img{display:block;width:100%;height:auto;transition:transform 1.2s ease}
+@media(hover:hover){.cinema-brand-banner:hover img{transform:scale(1.025)}}
+.cinema-home-heading{font-family:Georgia,serif;font-size:clamp(25px,3vw,42px);font-weight:400;letter-spacing:-1px;margin:32px 0 22px}
+.cinema-v13 .recent-spotlight{margin-top:0;border:1px solid #d1ac6d30;background:#111116;border-radius:20px;box-shadow:0 20px 60px #0005}
+.cinema-v13 .feature-slide{min-height:410px;padding:42px 48px}
+.cinema-v13 .feature-slide h2{font-family:Georgia,serif;font-size:clamp(30px,4.5vw,60px);line-height:1.1;font-weight:400;letter-spacing:-1.6px;margin:12px 0 22px;max-width:19ch;color:#fff6e9}
+.cinema-v13 .spotlight-background{opacity:.46;filter:saturate(.8);object-fit:cover}
+.cinema-v13 .spotlight-shade{background:linear-gradient(90deg,#101015 4%,#101015ee 30%,#10101544 100%)}
+.cinema-v13 .spotlight-poster{transform:rotate(3deg);box-shadow:0 20px 50px #0009;border-radius:12px;transition:transform .4s}
+.cinema-v13 .spotlight-poster:hover{transform:rotate(0) scale(1.03)}
+.cinema-v13 .primary-btn{background:linear-gradient(125deg,#f1d49e,#c89850);color:#21180d;border:1px solid #ebcc91;border-radius:9px;font-weight:700;box-shadow:0 6px 22px #b6854020;min-height:46px}
+.cinema-v13 .primary-btn:hover{background:#f4dba9;box-shadow:0 8px 28px #c8985040;transform:translateY(-2px)}
+.cinema-v13 .section-kicker,.cinema-v13 .eyebrow,.cinema-v13 .v14-feature-eyebrow,.cinema-v13 .rating-inline,.cinema-v13 .cinema-card-rating{color:#dfbb7b}
+.cinema-v13 .collection-section-head h2,.cinema-v13 .detail-section h2,.cinema-v13 .collection-intro h1{font-family:Georgia,serif;font-weight:400;letter-spacing:-.6px}
+.cinema-v13 .collection-section{padding-top:30px}
+.cinema-v13 .collection-intro{padding:28px 0 16px}
+.cinema-v13 .movie-card.cinema-card-v14{background:linear-gradient(145deg,#191921,#101116);border:1px solid #ffffff12;border-radius:15px;box-shadow:0 8px 20px #0002;transition:transform .3s,border-color .3s,box-shadow .3s}
+.cinema-v13 .movie-card.cinema-card-v14:hover{transform:translateY(-5px);border-color:#d8b77c88;box-shadow:0 20px 42px #0007}
+.cinema-v13 .movie-card .poster{overflow:hidden}
+.cinema-v13 .movie-card .poster img{transition:transform .65s cubic-bezier(.2,.7,.3,1)}
+.cinema-v13 .movie-card:hover .poster img{transform:scale(1.065)}
+.cinema-v13 .cinema-card-v14 .card-title{font-size:22px;line-height:1.25;color:#f4f0e8}
+.cinema-v13 .card-genres span{background:#ddbc7910;border:1px solid #ddbc791e;border-radius:5px;color:#c9c1b4}
+.cinema-v13 .cinema-card-arrow{border-color:#c49b5744;color:#e1c187}
+.cinema-v13 .cinema-card-cta{color:#e1c187}
+.cinema-v13 .feature-dots button[aria-pressed=true]{color:#f1d39c;border-color:#dfbb7b}
+.cinema-v13 .title-page{isolation:isolate;position:relative;padding-top:44px}
+.cinema-v13 .title-backdrop-layer{opacity:.42;mask-image:linear-gradient(#000,transparent);border-radius:20px}
+.cinema-v13 .cinema-hero{gap:50px;padding:36px;border:1px solid #e4ba7529;border-radius:20px;background:linear-gradient(120deg,#111116ed,#11111699);box-shadow:0 24px 70px #0005}
+.cinema-v13 .title-main h1{font-family:Georgia,serif;font-size:clamp(34px,4vw,60px);line-height:1.08;font-weight:400;letter-spacing:-1.5px;color:#fff4e3}
+.cinema-v13 .title-poster{border-radius:14px;box-shadow:0 20px 55px #0009}
+.cinema-v13 .synopsis{font-size:16px;line-height:1.85;color:#d2cfc8;max-width:78ch}
+.cinema-v13 .title-details{border-top:1px solid #d1ac6d24;padding-top:20px}
+.cinema-v13 .title-details dt{color:#c1a779}
+.cinema-v13 .catalog-subtitle-notice{border:1px solid #d6b37128;background:#dfbb7b08;border-radius:12px;padding:18px;font-size:13px}
+.cinema-v13 .catalog-subtitle-notice p{line-height:1.7}
+.cinema-v13 .player-panel{background:#0e0f14;border:1px solid #e0bb7750;border-radius:16px;box-shadow:0 30px 100px #000c}
+.cinema-v13 .player-frame{aspect-ratio:16/9;background:#000}
+.cinema-v13 .player-frame iframe{width:100%;height:100%;border:0}
+.cinema-v13 .cast-card{background:#16161d;border:1px solid #ffffff0d;border-radius:12px;overflow:hidden}
+.cinema-v13 .site-footer{border-top:1px solid #d6b37122;background:#08090c}
+.cinema-v13 .pagination a.active{background:#dfbb7b;color:#191209;border-color:#dfbb7b}
+.cinema-v13 a:focus-visible,.cinema-v13 button:focus-visible,.cinema-v13 input:focus-visible,.cinema-v13 select:focus-visible{outline:2px solid #edc985;outline-offset:4px}
+@media(max-width:1100px){.cinema-v13 .wrap{width:calc(100% - 40px)}.cinema-v13 .header-row{gap:18px}.cinema-v13 .brand{width:210px}.cinema-v13 .cinema-hero{gap:28px;padding:26px}.cinema-v13 .feature-slide{padding:32px}.cinema-v13 .cinema-card-v14 .card-title{font-size:19px}}
+@media(max-width:760px){.cinema-v13 .wrap{width:calc(100% - 32px)}.cinema-v13 .header-row{min-height:76px;gap:12px}.cinema-v13 .brand{width:190px}.cinema-brand-banner{margin-top:16px;border-radius:12px}.cinema-home-heading{margin:24px 0 18px}.cinema-v13 .feature-slide{padding:28px 24px;min-height:340px}.cinema-v13 .feature-slide h2{font-size:36px;letter-spacing:-.8px}.cinema-v13 .cinema-hero{padding:20px;gap:24px}.cinema-v13 .title-page{padding-top:22px}.cinema-v13 .cinema-card-v14 .card-title{font-size:18px}.cinema-v13 .main-nav{background:#101116;border-color:#d8b77c33}.cinema-v13 .premium-actions{gap:10px;flex-wrap:wrap}}
+@media(max-width:480px){.cinema-v13 .brand{width:175px}.cinema-v13 .wrap{width:calc(100% - 24px)}.cinema-v13 .feature-slide h2{font-size:32px}.cinema-v13 .feature-slide{padding:24px 20px;min-height:330px}.cinema-v13 .movie-grid.cinema-grid-v14{grid-template-columns:1fr}.cinema-v13 .cinema-card-v14 .movie-card-link{grid-template-columns:32% minmax(0,1fr);min-height:225px}.cinema-v13 .movie-card.cinema-card-v14 .card-body{padding:16px}.cinema-v13 .cinema-card-v14 .card-title{font-size:18px}.cinema-v13 .cinema-card-topline{flex-wrap:wrap;gap:6px}.cinema-v13 .cinema-hero{display:flex;flex-direction:column;padding:20px}.cinema-v13 .poster-column{width:160px;align-self:center}.cinema-v13 .title-main{min-width:0;width:100%}.cinema-v13 .title-main h1{font-size:36px}.cinema-v13 .title-details>div{overflow-wrap:anywhere}.cinema-v13 .player-panel{border-radius:8px}.cinema-v13 .player-head{padding:12px}.cinema-v13 .spotlight-poster{display:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation:none!important;transition:none!important}.cinema-v13 .movie-card:hover,.cinema-v13 .movie-card:hover .poster img,.cinema-brand-banner:hover img{transform:none!important}}
+
+.cinema-v13 .title-backdrop-layer{left:0;right:0;width:100%;max-width:100%;overflow:hidden}.cinema-v13 .title-main{min-width:0}.cinema-v13 .title-main h1{overflow-wrap:anywhere}.cinema-v13 .spotlight-actions .primary-btn{background:linear-gradient(125deg,#f1d49e,#c89850);color:#21180d;border-color:#ebcc91}.cinema-v13 .catalog-subtitle-notice summary{cursor:pointer;font-weight:600;color:#e4c48c}.cinema-v13 .catalog-subtitle-notice[open] summary{margin-bottom:14px}.cinema-v13 .player-note{flex-wrap:wrap;gap:12px}

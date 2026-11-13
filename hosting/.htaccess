@@ -1,0 +1,51 @@
+Options -Indexes
+DirectoryIndex index.php
+RewriteEngine On
+RewriteBase /
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+RewriteRule ^sitemap-static\.xml$ sitemap.php?type=static [L,QSA]
+RewriteRule ^sitemap-(movies|tv|people)-([0-9]+)\.xml$ sitemap.php?type=$1&part=$2 [L,QSA]
+RewriteRule ^film/(tt[0-9]+)/?$ index.php?route=title&type=movie&id=$1 [L,QSA,NC]
+RewriteRule ^serial/(tt[0-9]+)/?$ index.php?route=title&type=tv&id=$1 [L,QSA,NC]
+RewriteRule ^persoana/(nm[0-9]+)/?$ index.php?route=person&id=$1 [L,QSA,NC]
+RewriteRule ^persoana/(nm[0-9]+)/(actor|regizor|scenarist)/?$ index.php?route=person&id=$1&person_role=$2&page=1 [L,QSA,NC]
+RewriteRule ^persoana/(nm[0-9]+)/(actor|regizor|scenarist)/pagina/([0-9]+)/?$ index.php?route=person&id=$1&person_role=$2&page=$3 [L,QSA,NC]
+RewriteRule ^catalog/?$ index.php?route=catalog [L,QSA]
+RewriteRule ^filme/?$ index.php?route=movies&page=1 [L,QSA]
+RewriteRule ^filme/pagina/([0-9]+)/?$ index.php?route=movies&page=$1 [L,QSA]
+RewriteRule ^seriale/?$ index.php?route=tv&page=1 [L,QSA]
+RewriteRule ^seriale/pagina/([0-9]+)/?$ index.php?route=tv&page=$1 [L,QSA]
+RewriteRule ^gen/([^/]+)/?$ index.php?route=genre&genre=$1&page=1 [L,QSA]
+RewriteRule ^gen/([^/]+)/pagina/([0-9]+)/?$ index.php?route=genre&genre=$1&page=$2 [L,QSA]
+RewriteRule ^an/([0-9]{4})/?$ index.php?route=year&year=$1&page=1 [L,QSA]
+RewriteRule ^an/([0-9]{4})/pagina/([0-9]+)/?$ index.php?route=year&year=$1&page=$2 [L,QSA]
+RewriteRule ^(contact|politica-de-confidentialitate|politica-cookie|termeni-de-utilizare|drepturi-de-autor)/?$ index.php?route=legal&legal=$1 [L,QSA]
+RewriteRule ^credite/?$ index.php?route=credits [L,QSA]
+RewriteRule ^cauta/?$ index.php?route=search [L,QSA]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+</IfModule>
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json application/xml
+</IfModule>
+
+<FilesMatch "^(config(?:\.local(?:\.example)?)?\.php)$">
+Require all denied
+</FilesMatch>

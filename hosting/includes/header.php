@@ -2,7 +2,7 @@
 $menuYears=array_values(array_unique(array_filter(array_map('intval',(array)($meta['years']??[])))));rsort($menuYears);
 ?>
 <header class="site-header"><div class="wrap header-row">
- <a class="brand brand-v10 brand-premium" href="/" aria-label="Bratu Marian — Filme și seriale, Acasă"><span class="brand-nameplate"><span class="brand-first">Bratu</span><span class="brand-last">Marian<span class="brand-play-mark" aria-hidden="true">▶</span></span></span><span class="brand-caption">FILME &amp; SERIALE</span></a>
+ <a class="brand brand-v10 brand-premium" href="/" aria-label="Bratu Marian — Filme și seriale, Acasă"><img class="cinema-logo" src="/assets/img/logo-cinema.svg" alt="Bratu Marian — Filme și seriale" width="336" height="72"></a>
  <nav class="main-nav" id="mainNav" aria-label="Navigare principală">
   <a href="/"<?=$route==='home'?' class="active" aria-current="page"':''?>>Acasă</a>
   <a href="/filme/"<?=$route==='movies'?' class="active" aria-current="page"':''?>>Filme</a>
