@@ -10,7 +10,8 @@ if (!preg_match('/^tt\d{5,12}$/', $id)) {
     echo safe_json(['ok'=>false,'error'=>'invalid_id']);
     exit;
 }
-$item = ['imdb_id'=>$id,'type'=>$type];
+$item = load_title($id,$type);
+if(!$item){http_response_code(404);echo safe_json(['ok'=>false]);exit;}
 $url = trailer_embed_url($item, true);
 echo safe_json([
     'ok' => $url !== '',

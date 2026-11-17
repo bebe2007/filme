@@ -2,6 +2,20 @@
 require __DIR__ . '/includes/functions.php';
 header('Content-Type: application/json; charset=UTF-8');header('X-Robots-Tag: noindex, nofollow',true);
 $action=query_string('action');
+if($action==='resume'){
+ $item=load_title(strtolower(query_string('id')),'tv');if(!$item||title_type($item)!=='tv'){http_response_code(404);echo safe_json(['ok'=>false]);exit;}
+ $tuples=[];foreach((array)($item['seasons']??[]) as $season)foreach((array)($season['episodes_data']??[]) as $ep)$tuples[]=[(int)$season['season'],(int)$ep['episode']];sort($tuples);
+ $wanted=[(int)query_string('season'),(int)query_string('episode')];$index=array_search($wanted,$tuples,true);if($index===false){echo safe_json(['ok'=>false]);exit;}
+ if(query_string('completed')==='1')$index++;if(!isset($tuples[$index])){echo safe_json(['ok'=>false]);exit;}[$sn,$en]=$tuples[$index];
+ echo safe_json(['ok'=>true,'season'=>$sn,'episode'=>$en,'player'=>player_url($item,$sn,$en)]);exit;
+}
+if($action==='season'){
+ $id=strtolower(query_string('id'));$sn=(int)query_string('season','-1');if(!preg_match('/^tt\d{5,12}$/',$id)||$sn<0||$sn>10000){http_response_code(400);echo safe_json(['ok'=>false]);exit;}
+ $titleItem=load_title($id,'tv');if(!$titleItem||title_type($titleItem)!=='tv'){http_response_code(404);echo safe_json(['ok'=>false]);exit;}
+ $seasonEpisodes=null;foreach((array)($titleItem['seasons']??[]) as $season)if((int)$season['season']===$sn){$seasonEpisodes=(array)($season['episodes_data']??[]);break;}
+ if($seasonEpisodes===null){http_response_code(404);echo safe_json(['ok'=>false]);exit;}
+ ob_start();include __DIR__.'/includes/episode-list.php';$html=ob_get_clean();echo safe_json(['ok'=>true,'html'=>$html]);exit;
+}
 if($action==='feature'){
  $id=strtolower(query_string('id'));if(!preg_match('/^tt\d{5,12}$/',$id)){http_response_code(400);echo safe_json(['ok'=>false]);exit;}
  $item=load_title($id,query_string('type'));if(!$item){http_response_code(404);echo safe_json(['ok'=>false]);exit;}
@@ -10,7 +24,7 @@ if($action==='feature'){
 
 if($action==='related'){
  $item=load_title(strtolower(query_string('id')),query_string('type'));if(!$item){http_response_code(404);echo safe_json(['error'=>'not_found']);exit;}
- $items=array_slice(related_titles($item,16),8);ob_start();include __DIR__.'/includes/grid.php';$html=ob_get_clean();echo safe_json(['html'=>$html,'count'=>count($items)]);exit;
+ $items=array_slice(related_titles($item,12),6);ob_start();include __DIR__.'/includes/grid.php';$html=ob_get_clean();echo safe_json(['html'=>$html,'count'=>count($items)]);exit;
 }
 
 if($action==='category'){

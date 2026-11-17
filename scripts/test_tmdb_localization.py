@@ -1,6 +1,6 @@
 import json,sqlite3,tempfile,unittest
 from pathlib import Path
-from tmdb_localization import TMDbClient,enrich_catalog
+from tmdb_localization import TMDbClient,enrich_catalog,enrich_episodes
 
 class DocumentClient(TMDbClient):
     def __init__(self,translations,kind='movie'):
@@ -18,7 +18,9 @@ class BatchClient:
 class LocalizationTests(unittest.TestCase):
     def test_no_english_overview_disguised_as_romanian(self):
         client=DocumentClient([{'iso_639_1':'en','data':{'title':'English','overview':'English plot'}}])
-        self.assertEqual(client.translate('tt0000001','movie'),{})
+        row=client.translate('tt0000001','movie')
+        self.assertNotIn('description',row);self.assertNotIn('romanian_title',row)
+        self.assertTrue(row['background'].endswith('/scene.jpg'))
     def test_romanian_translation_and_images(self):
         row=DocumentClient([{'iso_639_1':'ro','iso_3166_1':'RO','data':{'title':'Titlu','overview':'Poveste.'}}]).translate('tt0000001','movie')
         self.assertEqual(row['description_language'],'ro');self.assertEqual(row['romanian_title'],'Titlu');self.assertTrue(row['background'].endswith('/scene.jpg'))
@@ -42,6 +44,26 @@ class LocalizationTests(unittest.TestCase):
             disabled=BatchClient(False);result,status=enrich_catalog(con,cache,history,snap,disabled,2,now=10000002)
             self.assertFalse(status['configured']);self.assertEqual(len(result),2);self.assertEqual(disabled.calls,[])
             self.assertNotIn('test-key',cache.read_text())
+        con.close()
+
+    def test_unseen_titles_precede_expired_cache(self):
+        con=sqlite3.connect(':memory:');con.execute('CREATE TABLE titles(imdb_id TEXT,type TEXT,romanian_title TEXT,year INTEGER,votes INTEGER)')
+        con.executemany('INSERT INTO titles VALUES(?,?,?,?,?)',[('tt0000001','movie',None,2026,100),('tt0000002','movie',None,2020,1)])
+        with tempfile.TemporaryDirectory() as d:
+            cache=Path(d)/'cache.json';cache.write_text(json.dumps({'items':{'tt0000001':{'checked_at':1,'data':{'description':'Text existent','description_language':'ro'}}}}))
+            client=BatchClient();enrich_catalog(con,cache,Path(d)/'history.json',client=client,batch_limit=1,now=10000000)
+            self.assertEqual(client.calls,[('tt0000002','movie')])
+        con.close()
+    def test_episode_enrichment_does_not_add_provider_membership(self):
+        con=sqlite3.connect(':memory:');con.execute('CREATE TABLE episodes(parent_imdb TEXT,season INTEGER,episode INTEGER)');con.execute("INSERT INTO episodes VALUES('tt0000001',1,2)")
+        class SeasonClient:
+            configured=True
+            def season(self,tmdb,season):return {'1':{'title':'Primul'},'2':{'title':'Al doilea'}}
+        with tempfile.TemporaryDirectory() as d:
+            rows,status=enrich_episodes(con,Path(d)/'episodes.json',{'tt0000001':{'tmdb_id':7}},client=SeasonClient(),now=10000000)
+            self.assertEqual(status['checked_seasons_this_run'],1)
+            self.assertEqual(rows['tt0000001']['1']['2']['title'],'Al doilea')
+            self.assertEqual(con.execute('SELECT episode FROM episodes').fetchall(),[(2,)])
         con.close()
 
 if __name__=='__main__':unittest.main()

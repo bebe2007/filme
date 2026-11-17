@@ -35,30 +35,51 @@ function category_document($genre,$scope,$page) {
     $d['items']=catalog_filter_items($d['items']??[]);remember_title_previews($d['items']);return $d;
 }
 function compact_duration($minutes){$n=max(0,(int)$minutes);return $n>=60?(int)floor($n/60).' h'.($n%60?' '.($n%60).' min':''):$n.' min';}
-function related_titles($item,$limit=8) {
- $type=title_type($item);$genres=public_genres($item['genres']??[]);$rows=[];$candidates=[];
- foreach(array_slice($genres,0,2) as $g){$d=category_document($g,$type==='tv'?'tv':'movies',1);foreach((array)($d['items']??[]) as $c)$candidates[$c['imdb_id']??'']=$c;}
- $d=catalog_json('ranked/'.($type==='tv'?'tv':'movies').'.json');foreach((array)($d['items']??[]) as $c)$candidates[$c['imdb_id']??'']=$c;
- $people=natural_names($item['cast']??[]);
- foreach(catalog_filter_items(array_values($candidates)) as $c){if(($c['imdb_id']??'')===($item['imdb_id']??'')||title_type($c)!==$type)continue;
- $shared=count(array_intersect($genres,public_genres($c['genres']??[])));if(!$shared)continue;
- $score=$shared*20+count(array_intersect($people,natural_names($c['cast']??[])))*12+min(10,(float)($c['rating']??0));
- $rows[]=['score'=>$score,'item'=>$c];}
- usort($rows,static function($a,$b){return($b['score']<=>$a['score'])?:((int)($b['item']['votes']??0)<=>(int)($a['item']['votes']??0));});
- return array_column(array_slice($rows,0,max(1,min(40,(int)$limit))),'item');
+function related_titles($item,$limit=6){
+ $type=title_type($item);$genres=public_genres($item['genres']??[]);$rows=[];$candidates=[];$sameActor=[];$actorName='';
+ $cacheId=($item['imdb_id']??'').':'.$limit.':v15';$cached=runtime_cache_get('related',$cacheId,1800);if($cached&&is_array($cached['value']))return $cached['value'];
+ foreach(array_slice($genres,0,3) as $g){$doc=category_document($g,$type==='tv'?'tv':'movies',1);foreach((array)($doc['items']??[]) as $c)$candidates[$c['imdb_id']??'']=$c;}
+ $doc=catalog_json('ranked/'.($type==='tv'?'tv':'movies').'.json');foreach((array)($doc['items']??[]) as $c)$candidates[$c['imdb_id']??'']=$c;
+ foreach((array)($item['cast']??[]) as $person){if(!is_array($person)||empty($person['nconst']))continue;$p=load_person($person['nconst']);if(!$p)continue;$actorName=(string)($p['name']??'');foreach(array_slice((array)($p['roles']['actor']??[]),0,60) as $c){$id=$c['imdb_id']??'';$sameActor[$id]=true;$candidates[$id]=$c;}break;}
+ foreach(catalog_filter_items(array_values($candidates)) as $c){$id=$c['imdb_id']??'';if($id===($item['imdb_id']??'')||title_type($c)!==$type)continue;$shared=count(array_intersect($genres,public_genres($c['genres']??[])));$actor=isset($sameActor[$id]);if(!$shared&&!$actor)continue;
+  $votes=(int)($c['votes']??0);$rating=(float)($c['rating']??0);if(!$actor&&$votes<1000)continue;
+  $distance=abs((int)($c['year']??0)-(int)($item['year']??0));$score=$shared*12+($actor?30:0)+$rating+min(8,log10(max(1,$votes))*2)-min(12,$distance/4);
+  if($actor&&$actorName!=='')$c['recommendation_reason']='Cu '.$actorName;else $c['recommendation_reason']='Genuri comune';$rows[]=['score'=>$score,'item'=>$c];
+ }
+ usort($rows,static function($a,$b){return ($b['score']<=>$a['score'])?:strcmp($a['item']['imdb_id'],$b['item']['imdb_id']);});$out=array_column(array_slice($rows,0,max(1,min(24,(int)$limit))),'item');runtime_cache_put('related',$cacheId,$out,1800);return $out;
+}
+function collection_titles($item){
+ $collection=$item['collection']['id']??null;if(!$collection)return [];$doc=catalog_json('collections.json');$rows=(array)($doc['collections'][(string)$collection]['items']??[]);
+ return array_slice(array_values(array_filter(catalog_filter_items($rows),static function($c)use($item){return ($c['imdb_id']??'')!==($item['imdb_id']??'');})),0,6);
 }
 function today_label() { $d=new DateTimeImmutable('now',new DateTimeZone('Europe/Bucharest'));$months=[1=>'Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];return $d->format('j').' '.$months[(int)$d->format('n')].' '.$d->format('Y'); }
 function daily_additions_text() { $d=catalog_json('daily.json',300);$today=(new DateTimeImmutable('now',new DateTimeZone('Europe/Bucharest')))->format('Y-m-d');$prefix='Astăzi '.today_label();if(!is_array($d)||empty($d['verified'])||($d['date']??'')!==$today)return $prefix.' · Numărul titlurilor adăugate nu este disponibil momentan.';return $prefix.' au fost adăugate '.str_pad((string)max(0,(int)($d['movies']??0)),3,'0',STR_PAD_LEFT).' de filme și '.str_pad((string)max(0,(int)($d['tv']??0)),3,'0',STR_PAD_LEFT).' de seriale.'; }
 function media_url($item,$kind='poster',$season=null,$episode=null) { $params=['id'=>$item['imdb_id']??'','type'=>title_type($item),'kind'=>$kind];if($season!==null)$params['season']=(int)$season;if($episode!==null)$params['episode']=(int)$episode;return '/media.php?'.http_build_query($params); }
 function valid_image_url($url) { if(!is_string($url)||preg_match('/[\x00-\x20]/',$url))return false;$p=parse_url($url);return is_array($p)&&($p['scheme']??'')==='https'&&!empty($p['host'])&&empty($p['user'])&&empty($p['pass'])&&(!isset($p['port'])||$p['port']===443); }
-function tmdb_document($path) {
-    if(!tmdb_enabled()||!preg_match('~^(?:movie|tv)/\d+(?:/season/\d+)?(?:/episode/\d+)?$~',$path))return null;
-    $key='filme_tmdb_'.sha1($path);if(function_exists('apcu_fetch')){$ok=false;$hit=apcu_fetch($key,$ok);if($ok&&is_array($hit))return $hit;}
-    $params=['language'=>'ro-RO'];$key=trim((string)cfg('tmdb_api_key'));if($key!=='')$params['api_key']=$key;
-    $headers=['Accept: application/json'];$token=trim((string)cfg('tmdb_api_token'));if($token!=='')$headers[]='Authorization: Bearer '.$token;
-    $raw=fetch_remote_now('https://api.themoviedb.org/3/'.$path.'?'.http_build_query($params),6,$headers);$d=$raw!==false?json_decode($raw,true):null;
-    if(is_array($d)&&!isset($d['success'])){if(function_exists('apcu_store'))@apcu_store($key,$d,86400);return $d;}return null;
+function country_label($code){
+ $map=['RO'=>'România','US'=>'Statele Unite','GB'=>'Regatul Unit','FR'=>'Franța','DE'=>'Germania','IT'=>'Italia','ES'=>'Spania','CA'=>'Canada','AU'=>'Australia','NZ'=>'Noua Zeelandă','JP'=>'Japonia','KR'=>'Coreea de Sud','CN'=>'China','HK'=>'Hong Kong','TW'=>'Taiwan','IN'=>'India','TR'=>'Turcia','RU'=>'Rusia','UA'=>'Ucraina','PL'=>'Polonia','CZ'=>'Cehia','HU'=>'Ungaria','BG'=>'Bulgaria','GR'=>'Grecia','RS'=>'Serbia','HR'=>'Croația','SE'=>'Suedia','NO'=>'Norvegia','DK'=>'Danemarca','FI'=>'Finlanda','NL'=>'Țările de Jos','BE'=>'Belgia','CH'=>'Elveția','AT'=>'Austria','IE'=>'Irlanda','PT'=>'Portugalia','BR'=>'Brazilia','MX'=>'Mexic','AR'=>'Argentina','ZA'=>'Africa de Sud','IL'=>'Israel','IR'=>'Iran','EG'=>'Egipt','IS'=>'Islanda','TH'=>'Thailanda','ID'=>'Indonezia','PH'=>'Filipine','MY'=>'Malaezia','VN'=>'Vietnam','MD'=>'Republica Moldova'];
+ return $map[strtoupper((string)$code)]??(string)$code;
 }
+function tmdb_document($path){
+ if(!tmdb_enabled()||!preg_match('~^(?:movie|tv)/\d+(?:/season/\d+)?(?:/episode/\d+)?$~',$path))return null;
+ $cacheId=$path.':ro:v15';$cached=runtime_cache_get('tmdb',$cacheId,86400);if($cached&&is_array($cached['value']))return $cached['value'];
+ $params=['language'=>'ro-RO'];$apiKey=trim((string)cfg('tmdb_api_key'));if($apiKey!=='')$params['api_key']=$apiKey;
+ if(preg_match('~^(movie|tv)/\d+$~',$path,$m))$params['append_to_response']=$m[1]==='movie'?'translations,videos,release_dates':'translations,videos,content_ratings';
+ $headers=['Accept: application/json'];$token=trim((string)cfg('tmdb_api_token'));if($token!=='')$headers[]='Authorization: Bearer '.$token;
+ $raw=fetch_remote_now('https://api.themoviedb.org/3/'.$path.'?'.http_build_query($params),8,$headers);$doc=$raw!==false?json_decode($raw,true):null;
+ if(is_array($doc)&&!isset($doc['success'])){runtime_cache_put('tmdb',$cacheId,$doc,86400);return $doc;}
+ $stale=runtime_cache_get('tmdb',$cacheId,7*86400);return $stale['value']??null;
+}
+function episode_title($episode){$name=trim((string)($episode['title']??''));$n=(int)($episode['episode']??1);return $name===''||preg_match('/^(?:Episode\s*#?\s*[\d.]+|tt\d+)$/i',$name)?'Episodul '.$n:$name;}
+function localized_season($item,$season){
+ if(empty($item['tmdb_id']))return null;$doc=tmdb_document('tv/'.(int)$item['tmdb_id'].'/season/'.max(0,(int)$season));if(!is_array($doc))return null;
+ $out=['season'=>(int)$season,'episodes'=>[]];foreach((array)($doc['episodes']??[]) as $ep){$n=(int)($ep['episode_number']??0);if($n<1)continue;
+  $row=['episode'=>$n,'title'=>episode_title(['title'=>$ep['name']??'','episode'=>$n]),'description'=>trim((string)($ep['overview']??'')),'air_date'=>$ep['air_date']??null];
+  $path=$ep['still_path']??'';if(is_string($path)&&preg_match('~^/[A-Za-z0-9._/-]+$~',$path))$row['image']='https://image.tmdb.org/t/p/w500'.$path;
+  $out['episodes'][$n]=$row;
+ }return $out;
+}
+
 function detail_icon($kind) {
     $paths=['genre'=>'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>','clock'=>'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>','director'=>'<rect x="3" y="7" width="13" height="12" rx="2"/><path d="m16 11 5-3v10l-5-3M5 3l3 4M12 3l3 4"/>','writer'=>'<path d="m14 4 6 6M4 20l4-1L21 6l-4-4L4 15z"/>','language'=>'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a18 18 0 0 1 0 18 18 18 0 0 1 0-18"/>','country'=>'<path d="M5 21V3c5-4 9 4 14 0v11c-5 4-9-4-14 0"/>'];
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'.($paths[$kind]??$paths['genre']).'</svg>';

@@ -59,4 +59,12 @@ class SyncTest(unittest.TestCase):
   row=('tt9029366','movie','12 Months',None,None,2022,None,90,None,None,None)
   self.assertNotIn('site_added_at',b.title_to_card(row,True))
 
+ def test_compact_export_preserves_localized_images(self):
+  collect(self.con,self.root/'cache',self.feeds,interval=0);out=self.root/'out';out.mkdir()
+  (out/'meta.json').write_text(json.dumps({'generated_at':'2026-11-17T12:00:00Z','movies':1,'tv':2,'total':3}))
+  publish_indexes(self.con,out,{'tt9029366':{'poster':'https://image.tmdb.org/t/p/w500/poster.jpg','background':'https://image.tmdb.org/t/p/w1280/scene.jpg'}})
+  with gzip.open(out/'sync/catalog-v8-recent.ndjson.gz','rt') as f: rows=[json.loads(l) for l in f]
+  row=next(x for x in rows if x[0]=='tt9029366')
+  self.assertEqual(row[8],'https://image.tmdb.org/t/p/w500/poster.jpg');self.assertEqual(row[9],'https://image.tmdb.org/t/p/w1280/scene.jpg')
+
 if __name__=='__main__':unittest.main()

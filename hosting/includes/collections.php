@@ -1,6 +1,6 @@
 <?php
 /** Public listings always read the same validated release as the full catalog. */
-function collection_filters($scope){$f=catalog_filters();$f['tip']=$scope;$f['q']='';$f['de']=1880;$f['pana']=2100;$f['nota']=0;$f['sort']='recent';return $f;}
+function collection_filters($scope){$f=catalog_filters();$f['tip']=$scope;$f['q']='';$f['de']=1880;$f['pana']=2100;$f['nota']=0;$f['voturi']=0;$f['format']='';$f['sort']='recent';return $f;}
 function collection_url($scope,$filters=[],$page=1){$url=listing_path($scope==='tv'?'tv':'movie',$page);return $url.(!empty($filters['gen'])?'?'.http_build_query(['gen'=>$filters['gen']]):'');}
 function recent_stamp($item){$v=$item['site_added_at']??$item['added_at']??'';return is_string($v)&&preg_match('/^20\d\d-\d\d-\d\dT/',$v)?(strtotime($v)?:0):0;}
 function recent_compare($a,$b){return (recent_stamp($b)<=>recent_stamp($a))?:strcmp($a['imdb_id'],$b['imdb_id']);}

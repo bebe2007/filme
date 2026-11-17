@@ -1,29 +1,3 @@
 <?php
-// Public defaults. Private credentials belong in ignored config.local.php.
-return [
-    'version' => '14.0.0',
-    'site_name' => 'Filme & Seriale',
-    'site_url' => 'https://filme.bratu-marian.com',
-    'owner_name' => 'Marian Bratu',
-    'data_base_url' => 'https://bebe2007.github.io/filme/data',
-    'provider_base_url' => 'https://vsembed.ru',
-    'subtitle_lang' => 'ro',
-    'items_per_page' => 36,
-    'cache_ttl' => 21600,
-    'catalog_cache_ttl' => 60,
-    'catalog_cache_stale_ttl' => 604800,
-    'sitemap_part_size' => 40000,
-    'hide_adult' => false,
-    'blocked_title_ids' => [],
-    'tmdb_language' => 'ro-RO',
-    'tmdb_fallback_language' => 'en-US',
-    'title_metadata_ttl' => 2592000,
-    'title_metadata_fallback_ttl' => 604800,
-    'romanian_subtitles_mode' => 'prefer',
-    'opensubtitles_user_agent' => 'FilmeBratuMarian v3.1.0',
-    'trailer_meta_base_url' => 'https://v3-cinemeta.strem.io',
-    'trailer_cache_ttl' => 86400,
-    'tmdb_api_key' => getenv('TMDB_API_KEY') ?: '',
-    'tmdb_api_token' => getenv('TMDB_API_TOKEN') ?: (getenv('TMDB_READ_ACCESS_TOKEN') ?: ''),
-    'opensubtitles_api_key' => '',
-];
+// Public defaults. Existing hosting settings and config.local.php remain private.
+return require __DIR__.'/config.defaults.php';

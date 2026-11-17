@@ -243,7 +243,8 @@ def init_db(path: Path) -> sqlite3.Connection:
           runtime INTEGER,
           genres TEXT,
           rating REAL,
-          votes INTEGER
+          votes INTEGER,
+          title_kind TEXT
         );
         CREATE INDEX idx_titles_type_year ON titles(type, year DESC);
         CREATE INDEX idx_titles_year ON titles(year);
@@ -382,14 +383,14 @@ def import_basics(con: sqlite3.Connection, path: Path) -> None:
             t = row.get("tconst")
             if t in title_ids:
                 genres = clean(row.get("genres"))
-                tb.append((clean(row.get("primaryTitle")), clean(row.get("originalTitle")), int_or_none(row.get("startYear")), int_or_none(row.get("endYear")), int_or_none(row.get("runtimeMinutes")), genres, t))
+                tb.append((clean(row.get("primaryTitle")), clean(row.get("originalTitle")), int_or_none(row.get("startYear")), int_or_none(row.get("endYear")), int_or_none(row.get("runtimeMinutes")), genres, {"movie":"feature","tvMovie":"feature","short":"short","tvShort":"short","tvSpecial":"special","tvSeries":"series","tvMiniSeries":"series","tvEpisode":"episode","video":"video"}.get(row.get("titleType"),""), t))
                 if len(tb) >= 5000:
-                    cur.executemany("UPDATE titles SET title=?,original_title=?,year=?,end_year=?,runtime=?,genres=? WHERE imdb_id=?", tb); tb.clear()
+                    cur.executemany("UPDATE titles SET title=?,original_title=?,year=?,end_year=?,runtime=?,genres=?,title_kind=? WHERE imdb_id=?", tb); tb.clear()
             elif t in episode_ids:
                 eb.append((clean(row.get("primaryTitle")), clean(row.get("originalTitle")), int_or_none(row.get("startYear")), int_or_none(row.get("runtimeMinutes")), t))
                 if len(eb) >= 5000:
                     cur.executemany("UPDATE episodes SET title=?,original_title=?,year=?,runtime=? WHERE ep_tconst=?", eb); eb.clear()
-        if tb: cur.executemany("UPDATE titles SET title=?,original_title=?,year=?,end_year=?,runtime=?,genres=? WHERE imdb_id=?", tb)
+        if tb: cur.executemany("UPDATE titles SET title=?,original_title=?,year=?,end_year=?,runtime=?,genres=?,title_kind=? WHERE imdb_id=?", tb)
         if eb: cur.executemany("UPDATE episodes SET title=?,original_title=?,year=?,runtime=? WHERE ep_tconst=?", eb)
         con.commit()
     finally:
@@ -579,7 +580,7 @@ def load_editorial_overrides(path: Path):
         return {}
     if not isinstance(data,dict):
         return {}
-    allowed={"description","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url"}
+    allowed={"description","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url","description_language","description_source","metadata_source","tmdb_id","age_rating_country"}
     out={}
     for imdb,row in data.items():
         if not TT_RE.match(str(imdb)) or not isinstance(row,dict):
@@ -596,6 +597,8 @@ def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> No
     from provider_sync import read
     addition_history=read(out/"catalog-history.json").get("items",{})
     log("Construiesc paginile virtuale / title shards")
+    columns={x[1] for x in con.execute('PRAGMA table_info(titles)')}
+    title_kinds=dict(con.execute('SELECT imdb_id,title_kind FROM titles')) if 'title_kind' in columns else {}
     all_ids=[r[0] for r in con.execute("SELECT imdb_id FROM titles ORDER BY imdb_id")]
     groups=defaultdict(list)
     for imdb in all_ids: groups[imdb[:6]].append(imdb)
@@ -628,17 +631,24 @@ def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> No
             if typ=='tv':
                 for season_num,eps in sorted(episodes.get(imdb,{}).items()):
                     seasons.append({"season":season_num,"episodes":len(eps),"first_episode":eps[0]['episode'] if eps else None,"last_episode":eps[-1]['episode'] if eps else None,"episodes_data":eps})
+            episode_meta=editorial.get(imdb,{}).get('episode_metadata',{})
+            for season in seasons:
+                for ep in season['episodes_data']:
+                    extra=episode_meta.get(str(season['season']),{}).get(str(ep['episode']),{})
+                    if isinstance(extra,dict):
+                        ep.update({k:v for k,v in extra.items() if v is not None and v!=''})
             shard[imdb]={
                 "imdb_id":imdb,"type":typ,"title":ro or title or imdb,"romanian_title":ro,"original_title":orig,
                 "year":year,"end_year":end_year,"runtime":runtime,"genres":genres.split(',') if genres else [],"rating":rating,"votes":votes,
                 "directors":crew.get(imdb,{}).get('director',[]),"writers":crew.get(imdb,{}).get('writer',[]),"cast":cast,"credits":other,
                 "seasons":seasons,"total_episodes":sum(len(x['episodes_data']) for x in seasons) if seasons else None,
+                "title_kind":title_kinds.get(imdb,''),
                 "site_added_at":addition_history.get(imdb,{}).get("site_added_at"),
                 "provider_added_at":addition_history.get(imdb,{}).get("provider_added_at")
             }
             if imdb in editorial:
                 shard[imdb]["editorial"]=editorial[imdb]
-                for key in ("description","description_language","description_source","metadata_source","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url"):
+                for key in ("description","description_language","description_source","metadata_source","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url","tmdb_id","age_rating_country","collection"):
                     if key in editorial[imdb]:
                         shard[imdb][key]=editorial[imdb][key]
         write_json(out/'title-shards'/f'{prefix}.json',shard)
@@ -684,6 +694,7 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
     people_count = 0
     credit_count = 0
     people_ids = []
+    person_search=defaultdict(list)
 
     def compact_card(row):
         imdb_id, typ, title, original, ro_title, year, rating, votes, genres = row
@@ -708,6 +719,11 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
                 shard[current_n] = current
                 people_ids.append(current_n)
                 people_count += 1
+                normalized=normalize(current.get('name') or '')
+                buckets={word[:3] for word in normalized.split() if len(word)>=3}
+                compact=normalized.replace(' ','')
+                if len(compact)>=3:buckets.add(compact[:3])
+                for bucket in buckets:person_search[bucket].append([current_n,current.get('name') or current_n,current.get('birth_year'),current.get('professions') or []])
 
     def flush_shard():
         if shard_prefix is not None and shard:
@@ -743,6 +759,8 @@ def build_people_index(con: sqlite3.Connection, out: Path) -> None:
 
     flush_person()
     flush_shard()
+    for bucket,items in person_search.items():write_json(out/'people-search'/f'{bucket}.json',{'items':items})
+    write_json(out/'people-search'/'meta.json',{'prefix_chars':3,'people':people_count})
     (out / 'people-ids.txt').write_text('\n'.join(people_ids) + ('\n' if people_ids else ''), encoding='utf-8')
     write_json(out / 'people-meta.json', {
         "people": people_count,
@@ -854,7 +872,31 @@ def build_output(con: sqlite3.Connection, out: Path, page_size: int, editorial=N
     build_search_buckets(con,out)
     build_title_shards(con,out,editorial)
     build_people_index(con,out)
+    build_home_feed(con,out,editorial or {})
 
+
+def build_home_feed(con,out,editorial):
+    from provider_sync import read
+    history=read(out/'catalog-history.json').get('items',{})
+    columns={r[1] for r in con.execute('PRAGMA table_info(titles)')}
+    kinds=dict(con.execute('SELECT imdb_id,title_kind FROM titles')) if 'title_kind' in columns else {}
+    rows=con.execute('SELECT imdb_id,type,title,original_title,romanian_title,year,end_year,runtime,genres,rating,votes FROM titles').fetchall()
+    cards=[]
+    for row in rows:
+        card=title_to_card(row,True);imdb=card['imdb_id'];card['title_kind']=kinds.get(imdb,'')
+        card.update({k:v for k,v in editorial.get(imdb,{}).items() if k in ['description','description_language','poster','background','tagline','trailer_youtube','tmdb_id','collection']})
+        if not card.get('poster') and history.get(imdb,{}).get('poster'):card['poster']=history[imdb]['poster']
+        cards.append(card)
+    recent=sorted(cards,key=lambda c:(history.get(c['imdb_id'],{}).get('site_added_at') or '',c.get('year') or 0,c['imdb_id']),reverse=True)
+    rated=sorted([c for c in cards if (c.get('votes') or 0)>=1000 and c.get('rating')],key=lambda c:(c['rating'],c.get('votes') or 0),reverse=True)
+    curated=[c for c in cards if c['type']=='movie' and c.get('poster') and c.get('background') and c.get('description_language')=='ro' and (c.get('votes') or 0)>=1000]
+    curated.sort(key=lambda c:(c.get('year') or 0,c.get('rating') or 0),reverse=True)
+    collections={}
+    for card in cards:
+        collection=card.get('collection') or {};key=str(collection.get('id') or '')
+        if key:collections.setdefault(key,{'name':collection.get('name') or '', 'items':[]})['items'].append(card)
+    write_json(out/'collections.json',{'collections':collections})
+    write_json(out/'home.json',{'featured':curated[:6],'recent_movies':[c for c in recent if c['type']=='movie'][:18],'recent_tv':[c for c in recent if c['type']=='tv'][:12],'rated_movies':[c for c in rated if c['type']=='movie'][:12],'rated_tv':[c for c in rated if c['type']=='tv'][:12]})
 
 def main():
     ap=argparse.ArgumentParser()
@@ -902,15 +944,18 @@ def main():
         import_principals(con,downloads/'title.principals.tsv.gz')
         import_people(con,downloads/'name.basics.tsv.gz')
         editorial=load_editorial_overrides(Path(args.editorial).resolve())
-        from tmdb_localization import enrich_catalog
+        from tmdb_localization import enrich_catalog,enrich_episodes
         localized,localization_status=enrich_catalog(con,vse_cache/'tmdb-ro.json',vse_cache/'presentation.json',snapshots)
+        episode_meta,episode_status=enrich_episodes(con,vse_cache/'tmdb-seasons.json',localized)
+        localization_status.update(episode_status)
+        for imdb,episodes in episode_meta.items():localized.setdefault(imdb,{})['episode_metadata']=episodes
         # Manual copy always wins over sourced TMDb translations.
         for imdb,fields in localized.items():
             editorial[imdb]={**fields,**editorial.get(imdb,{})}
         build_output(con,out,args.page_size,editorial,vse_cache/'presentation.json')
         sync_write(out/'localization-status.json',localization_status)
         sync_write(out/'provider-sync-status.json',sync_report)
-        publish_indexes(con,out)
+        publish_indexes(con,out,editorial)
     finally:
         con.close()
     log(f"Gata. Date: {out}")

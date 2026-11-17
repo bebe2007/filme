@@ -4,7 +4,8 @@ require_once __DIR__.'/shard-reader.php';
 function cfg($key = null) {
     static $config = null;
     if ($config === null) {
-        $config = require dirname(__DIR__) . '/config.php';
+        $config = require dirname(__DIR__) . '/config.defaults.php';
+        $existing=dirname(__DIR__).'/config.php';if(is_file($existing)){$current=require $existing;if(is_array($current))$config=array_replace($config,$current);}
         $local = dirname(__DIR__) . '/config.local.php';
         if (is_file($local)) {
             $extra = require $local;
@@ -16,9 +17,11 @@ function cfg($key = null) {
 
 function e($value) { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function safe_json($value) { return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); }
+function mb_strtolower_safe($s){return function_exists('mb_strtolower')?mb_strtolower((string)$s,'UTF-8'):strtolower((string)$s);}
 function ro_number($n) { return number_format((int)$n, 0, ',', '.'); }
 
-function cache_dir() { return dirname(__DIR__).'/cache'; }
+function cache_dir() { return (string)(cfg('runtime_cache_dir') ?: dirname(__DIR__).'/cache'); }
+
 function cache_path_for_url($url) { return cache_dir() . '/' . sha1($url) . '.cache'; }
 function lock_path_for_url($url) { return ''; }
 
@@ -34,23 +37,40 @@ function fetch_remote_now($url,$timeout=8,array $headers=[]){
  fclose($stream);return $body!==''?$body:false;
 }
 
-function write_cache_atomic($cache,$data) { return false; }
+function write_cache_atomic($cache,$data) {
+ $dir=dirname($cache);if(!is_dir($dir)&&!@mkdir($dir,0700,true)&&!is_dir($dir))return false;
+ try{$tmp=$cache.'.'.bin2hex(random_bytes(6)).'.tmp';}catch(Throwable $e){return false;}
+ $ok=@file_put_contents($tmp,$data,LOCK_EX)!==false;if($ok){@chmod($tmp,0600);$ok=@rename($tmp,$cache);}if(!$ok)@unlink($tmp);return $ok;
+}
+function runtime_cache_get($group,$id,$ttl,$allowStale=false){
+ $key='fbm_v15_'.$group.'_'.sha1($id);$row=null;
+ if(function_exists('apcu_fetch')){$hit=false;$v=apcu_fetch($key,$hit);if($hit&&is_array($v))$row=$v;}
+ if(!$row){$file=cache_dir().'/'.$group.'/'.sha1($id).'.json';$raw=is_file($file)?@file_get_contents($file):false;$row=$raw?json_decode($raw,true):null;}
+ if(!is_array($row)||!isset($row['checked_at'])||!array_key_exists('value',$row))return null;
+ $age=time()-(int)$row['checked_at'];if($age<0||(!$allowStale&&$age>max(1,(int)$ttl)))return null;
+ return $row;
+}
+function runtime_cache_put($group,$id,$value,$ttl){
+ $row=['checked_at'=>time(),'value'=>$value];$json=safe_json($row);if(!is_string($json))return false;
+ if(function_exists('apcu_store'))@apcu_store('fbm_v15_'.$group.'_'.sha1($id),$row,max(1,(int)$ttl));
+ return write_cache_atomic(cache_dir().'/'.$group.'/'.sha1($id).'.json',$json);
+}
 
 function refresh_url_cache($url,$cache,$lock,$timeout=8) {return fetch_remote_now($url,$timeout);}
 
 function queue_stale_refresh($url,$cache,$lock) {return;}
 
-// Request memory and optional APCu RAM cache only. No files or locks are created.
+// Request memory plus persistent text/JSON cache with a bounded stale fallback.
 function remote_text($url,$ttl=null,$staleTtl=null,$timeout=8) {
- static $request=[];
- if(array_key_exists($url,$request))return $request[$url];
- $ttl=$ttl===null?(int)cfg('cache_ttl'):max(0,(int)$ttl);
- $key='filme_v11_remote_'.sha1($url);
- if($ttl>0&&function_exists('apcu_fetch')){$hit=false;$v=apcu_fetch($key,$hit);if($hit&&is_string($v))return $request[$url]=$v;}
+ static $request=[];if(array_key_exists($url,$request))return $request[$url];
+ $ttl=$ttl===null?(int)cfg('cache_ttl'):max(0,(int)$ttl);$staleTtl=$staleTtl===null?max($ttl,86400):(int)$staleTtl;
+ $cached=$ttl>0?runtime_cache_get('remote',$url,$ttl):null;if($cached&&is_string($cached['value']))return $request[$url]=$cached['value'];
  $data=fetch_remote_now($url,max(1,(int)$timeout));
- if(!is_string($data)||$data===''||(substr((string)parse_url($url,PHP_URL_PATH),-5)==='.json'&&!is_array(json_decode($data,true))))return $request[$url]=false;
- if($ttl>0&&function_exists('apcu_store'))@apcu_store($key,$data,$ttl);
- return $request[$url]=$data;
+ if(is_string($data)&&$data!==''&&(!(substr((string)parse_url($url,PHP_URL_PATH),-5)==='.json')||is_array(json_decode($data,true)))){
+  if($ttl>0)runtime_cache_put('remote',$url,$data,$ttl);return $request[$url]=$data;
+ }
+ $stale=$staleTtl>0?runtime_cache_get('remote',$url,$staleTtl):null;
+ return $request[$url]=($stale&&is_string($stale['value'])?$stale['value']:false);
 }
 
 function remote_json($url, $ttl = null, $staleTtl = null, $timeout = 8) {
@@ -71,11 +91,25 @@ function catalog_json($path, $ttl = null) {
 function poster_url($imdbId) { return '/poster.php?id=' . rawurlencode((string)$imdbId); }
 function poster_source_url($imdbId, $size='medium') { return 'https://images.metahub.space/poster/' . rawurlencode((string)$size) . '/' . rawurlencode((string)$imdbId) . '/img'; }
 function item_poster_url($item) {
- $poster=$item['poster']??'';
- if(valid_image_url($poster)&&!preg_match('~/(?:background|backdrop)(?:/|$)~i',$poster))return $poster;
+ foreach([$item['editorial']['poster']??'', $item['poster']??''] as $poster){if(valid_image_url($poster)&&!preg_match('~/(?:background|backdrop)(?:/|$)~i',$poster))return $poster;}
  return poster_source_url($item['imdb_id']??'');
 }
-function item_background_url($item) { return media_url($item,'backdrop'); }
+function image_fallback_url($item,$kind='poster'){
+ $params=['id'=>$item['imdb_id']??'','type'=>title_type($item),'kind'=>$kind,'resolve'=>1];
+ $primary=$kind==='poster'?item_poster_url($item):($item['background']??'');if(valid_image_url($primary))$params['exclude']=$primary;
+ return '/media.php?'.http_build_query($params);
+}
+function poster_attributes($item){
+ $url=item_poster_url($item);$responsive='';
+ if(preg_match('~^https://image\.tmdb\.org/t/p/w[0-9]+(/[^?]+)$~',$url,$m))$responsive=' srcset="'.e('https://image.tmdb.org/t/p/w342'.$m[1]).' 342w, '.e('https://image.tmdb.org/t/p/w500'.$m[1]).' 500w" sizes="(max-width: 520px) 46vw, (max-width: 900px) 30vw, 220px"';
+ return 'referrerpolicy="no-referrer" data-fallback="'.e(image_fallback_url($item)).'" data-last-source="'.e(poster_source_url($item['imdb_id']??'')).'"'.$responsive;
+}
+
+function item_background_url($item) {
+ foreach([$item['editorial']['background']??'', $item['background']??''] as $url)if(valid_image_url($url))return $url;
+ return media_url($item,'backdrop');
+}
+
 function valid_youtube_video_id($id) { return (bool)preg_match('/^[A-Za-z0-9_-]{6,20}$/', trim((string)$id)); }
 
 function trailer_youtube_id($item, $allowRemote = true) {
@@ -204,18 +238,12 @@ function json_object_member_decode($raw,$key) {
     return null;
 }
 function person_record_cache_path($nconst) {return cache_dir().'/person-records/'.strtolower((string)$nconst).'.json';}
-function load_person($nconst) {
-    $nconst=strtolower(trim((string)$nconst));if(!preg_match('/^nm\d{5,12}$/',$nconst))return null;
-    $key='filme_v11_person_'.$nconst;$person=false;
-    if(function_exists('apcu_fetch')){$hit=false;$person=apcu_fetch($key,$hit);if(!$hit)$person=false;}
-    if(!is_array($person)){
-        $person=fetch_catalog_member(data_url('person-shards/'.substr($nconst,0,5).'.json'),$nconst);
-        if(!is_array($person))return null;
-        if(function_exists('apcu_store'))@apcu_store($key,$person,max(60,(int)cfg('cache_ttl')));
-    }
-    if(!isset($person['roles'])||!is_array($person['roles']))$person['roles']=[];
-    foreach(['actor','regizor','scenarist'] as $role)$person['roles'][$role]=catalog_filter_items((array)($person['roles'][$role]??[]));
-    return $person;
+function load_person($nconst){
+ $nconst=strtolower(trim((string)$nconst));if(!preg_match('/^nm\d{5,12}$/',$nconst))return null;
+ $cached=runtime_cache_get('people',$nconst,3600);$person=$cached['value']??null;
+ if(!is_array($person)){$person=fetch_catalog_member(data_url('person-shards/'.substr($nconst,0,5).'.json'),$nconst);if(!is_array($person))return null;runtime_cache_put('people',$nconst,$person,3600);}
+ if(!isset($person['roles'])||!is_array($person['roles']))$person['roles']=[];
+ foreach(['actor','regizor','scenarist'] as $role)$person['roles'][$role]=catalog_filter_items((array)($person['roles'][$role]??[]));return $person;
 }
 function site_url($path = '/') { if(preg_match('~^https://~i',(string)$path))return (string)$path;return rtrim(cfg('site_url'), '/') . '/' . ltrim($path, '/'); }
 function imdb_url($id) { return 'https://www.imdb.com/title/' . rawurlencode((string)$id) . '/'; }
@@ -253,12 +281,12 @@ function listing_path($kind,$page=1){$base=$kind==='tv'?'/seriale/':'/filme/';re
 
 function ro_subtitle_document(){
     static $doc=null;if($doc!==null)return $doc;
-    $path=cfg('romanian_subtitles_index');$raw=is_file($path)?@file_get_contents($path):false;$data=$raw?json_decode($raw,true):null;
+    $path=cfg('romanian_subtitles_index')?:dirname(__DIR__).'/data/romanian-subtitles.json';$raw=is_file($path)?@file_get_contents($path):false;$data=$raw?json_decode($raw,true):null;
     $doc=is_array($data)?$data:['complete'=>false,'items'=>[]];if(!isset($doc['items'])||!is_array($doc['items']))$doc['items']=[];return $doc;
 }
 function ro_subtitle_index(){return ro_subtitle_document()['items'];}
-function has_verified_ro_subtitle($id){$idx=ro_subtitle_index();$row=$idx[strtolower((string)$id)]??null;return $row===true||(is_array($row)&&!empty($row['confirmed']));}
-function store_ro_subtitle_status($id,$confirmed,$source='OpenSubtitles'){return false; /* readonly catalog */}
+function has_verified_ro_subtitle($id){$idx=ro_subtitle_index();$row=$idx[strtolower((string)$id)]??null;if($row===true||(is_array($row)&&!empty($row['confirmed'])))return true;$cached=runtime_cache_get('subtitles',(string)$id,604800);return !empty($cached['value']['confirmed']);}
+function store_ro_subtitle_status($id,$confirmed,$source='OpenSubtitles'){if(!preg_match('/^tt\d{5,12}$/',(string)$id))return false;return runtime_cache_put('subtitles',$id,['confirmed'=>(bool)$confirmed,'source'=>$source],$confirmed?604800:86400);}
 function subtitle_filter_active(){ $doc=ro_subtitle_document(); return cfg('romanian_subtitles_mode')==='confirmed_only' && !empty($doc['complete']) && count($doc['items'])>0; }
 function filter_subtitle_items($items){if(!subtitle_filter_active())return array_values((array)$items);return array_values(array_filter((array)$items,function($x){return has_verified_ro_subtitle($x['imdb_id']??'');}));}
 function title_is_blocked($id){return in_array(strtolower((string)$id),array_map('strtolower',(array)cfg('blocked_title_ids')),true);}
@@ -268,12 +296,17 @@ function title_preview_cache_dir(){return cache_dir().'/titles';}
 function title_metadata_cache_dir(){return cache_dir().'/metadata';}
 function title_metadata_cache_path($id){return title_metadata_cache_dir().'/'.strtolower((string)$id).'.json';}
 function cached_title_metadata($id,$allowStale=false){
- if(function_exists('apcu_fetch')){$hit=false;$row=apcu_fetch('filme_metadata_'.strtolower((string)$id),$hit);if($hit&&is_array($row))return $row;}return null;
+ $row=runtime_cache_get('metadata',strtolower((string)$id).':ro:v15:'.(tmdb_enabled()?'tmdb':'base'),$allowStale?90*86400:max(300,(int)cfg('title_metadata_ttl')));
+ if($row&&($row['value']['metadata_source']??'')==='none'&&time()-(int)$row['checked_at']>3600)return null;
+ return $row&&is_array($row['value'])?$row['value']:null;
 }
+
 function store_title_metadata($id,array $row){
  $id=strtolower((string)$id);if(!preg_match('/^tt\d{5,12}$/',$id))return false;$row['_checked_at']=time();
- return function_exists('apcu_store')?apcu_store('filme_metadata_'.$id,$row,max(300,(int)cfg('title_metadata_ttl'))):false;
+ $ttl=($row['metadata_source']??'none')==='none'?3600:max(300,(int)cfg('title_metadata_ttl'));
+ return runtime_cache_put('metadata',$id.':ro:v15:'.(tmdb_enabled()?'tmdb':'base'),$row,$ttl);
 }
+
 function tmdb_enabled(){return trim((string)cfg('tmdb_api_key'))!==''||trim((string)cfg('tmdb_api_token'))!=='';}
 function tmdb_find_document($imdbId,$language){
     if(!tmdb_enabled())return null;
@@ -289,26 +322,24 @@ function tmdb_pick_title_result($doc,$type){
     return isset($rows[0])&&is_array($rows[0])?$rows[0]:null;
 }
 function tmdb_metadata($item){
-    if(!tmdb_enabled())return [];$id=strtolower(trim((string)($item['imdb_id']??'')));if(!preg_match('/^tt\d{5,12}$/',$id))return [];
-    $type=title_type($item);$preferred=trim((string)cfg('tmdb_language'))?:'ro-RO';$row=tmdb_pick_title_result(tmdb_find_document($id,$preferred),$type);if(!$row)return [];
-    $overview=trim((string)($row['overview']??''));$descLang=$overview!==''?$preferred:'';
-    if($overview===''){
-        $fallback=trim((string)cfg('tmdb_fallback_language'))?:'en-US';$en=tmdb_pick_title_result(tmdb_find_document($id,$fallback),$type);
-        if($en){$overview=trim((string)($en['overview']??''));if($overview!=='')$descLang=$fallback;foreach(['poster_path','backdrop_path','original_language','release_date','first_air_date'] as $k){if(empty($row[$k])&&!empty($en[$k]))$row[$k]=$en[$k];}}
-    }
-    $posterPath=trim((string)($row['poster_path']??''));$backdropPath=trim((string)($row['backdrop_path']??''));
-    $out=[
-        'metadata_source'=>'TMDb','tmdb_id'=>(int)($row['id']??0),
-        'romanian_title'=>stripos($preferred,'ro')===0?trim((string)($row[$type==='tv'?'name':'title']??'')):null,
-        'description'=>$overview?:null,'description_language'=>$descLang?:null,'description_source'=>$overview!==''?'TMDb':null,
-        'poster'=>$posterPath!==''?'https://image.tmdb.org/t/p/w780'.$posterPath:null,
-        'background'=>$backdropPath!==''?'https://image.tmdb.org/t/p/w1280'.$backdropPath:null,
-        'image_source'=>($posterPath!==''||$backdropPath!=='')?'TMDb':null,
-        'language'=>trim((string)($row['original_language']??''))?:null,
-        'released'=>trim((string)($type==='tv'?($row['first_air_date']??''):($row['release_date']??'')))?:null,
-    ];
-    return array_filter($out,function($v){return $v!==null&&$v!==''&&$v!==0;});
+ if(!tmdb_enabled())return [];$id=strtolower(trim((string)($item['imdb_id']??'')));if(!preg_match('/^tt\d{5,12}$/',$id))return [];
+ $type=title_type($item);$row=tmdb_pick_title_result(tmdb_find_document($id,'ro-RO'),$type);if(!$row||empty($row['id']))return [];
+ $doc=tmdb_document(($type==='tv'?'tv/':'movie/').(int)$row['id'])?:$row;
+ $out=['metadata_source'=>'TMDb','tmdb_id'=>(int)$row['id']];
+ $translations=(array)($doc['translations']['translations']??[]);usort($translations,static function($a,$b){return (($a['iso_3166_1']??'')!=='RO')<=> (($b['iso_3166_1']??'')!=='RO');});
+ foreach($translations as $tr){if(($tr['iso_639_1']??'')!=='ro')continue;$d=(array)($tr['data']??[]);$name=trim((string)($d[$type==='tv'?'name':'title']??''));if($name!=='')$out['romanian_title']=$name;
+  $overview=trim((string)($d['overview']??''));if($overview!==''){$out['description']=$overview;$out['description_language']='ro';$out['description_source']='TMDb';}if(!empty($d['tagline']))$out['tagline']=$d['tagline'];break;}
+ foreach(['poster'=>['poster_path','w500'],'background'=>['backdrop_path','w1280']] as $key=>$spec){$path=$doc[$spec[0]]??$row[$spec[0]]??'';if(is_string($path)&&preg_match('~^/[A-Za-z0-9._/-]+$~',$path))$out[$key]='https://image.tmdb.org/t/p/'.$spec[1].$path;}
+ $out['image_source']='TMDb';$out['language']=$doc['original_language']??$row['original_language']??'';
+ $out['country']=implode(', ',array_filter(array_map(static function($v){return country_label(is_array($v)?($v['iso_3166_1']??''):$v);},(array)($doc['production_countries']??$doc['origin_country']??[]))));
+ $out['released']=$doc[$type==='tv'?'first_air_date':'release_date']??'';
+ if(!empty($doc['belongs_to_collection']))$out['collection']=$doc['belongs_to_collection'];
+ foreach((array)($doc['videos']['results']??[]) as $v){if(($v['site']??'')==='YouTube'&&($v['type']??'')==='Trailer'&&valid_youtube_video_id($v['key']??'')){$out['trailer_youtube']=$v['key'];break;}}
+ $certs=(array)($type==='tv'?($doc['content_ratings']['results']??[]):($doc['release_dates']['results']??[]));
+ foreach(['RO','US'] as $region){foreach($certs as $cert){if(($cert['iso_3166_1']??'')!==$region)continue;$rating=$cert['rating']??'';if($type!=='tv')foreach((array)($cert['release_dates']??[]) as $release)if(!empty($release['certification'])){$rating=$release['certification'];break;}if($rating!==''){$out['age_rating']=$rating;$out['age_rating_country']=$region;break 2;}}}
+ return array_filter($out,static function($v){return $v!==null&&$v!==''&&$v!==[];});
 }
+
 function cinemeta_metadata($item){
     $id=strtolower(trim((string)($item['imdb_id']??'')));if(!preg_match('/^tt\d{5,12}$/',$id))return [];
     $ct=title_type($item)==='tv'?'series':'movie';$base=rtrim((string)cfg('trailer_meta_base_url'),'/');if($base==='')return [];
@@ -342,13 +373,17 @@ function resolve_title_metadata($item){
     store_title_metadata($id,$meta);return $meta;
 }
 function enrich_title_item($item){
-    if(!is_array($item))return $item;$meta=resolve_title_metadata($item);if(!is_array($meta))return $item;
-    if(stripos((string)($meta['description_language']??''),'ro')===0 && empty($item['editorial']['description'])){foreach(['description','description_language','description_source'] as $field){if(isset($meta[$field]))$item[$field]=$meta[$field];}}
-    foreach(['romanian_title','description','description_language','description_source','poster','background','image_source','language','released','tmdb_id','metadata_source'] as $k){
-        if((!isset($item[$k])||$item[$k]===null||$item[$k]==='')&&isset($meta[$k])&&$meta[$k]!==null&&$meta[$k]!=='')$item[$k]=$meta[$k];
-    }
-    return $item;
+ if(!is_array($item))return $item;$meta=resolve_title_metadata($item);if(!is_array($meta))return $item;
+ $manual=(array)($item['editorial']??[]);
+ foreach(['romanian_title','description','description_language','description_source','poster','background','image_source','language','country','released','tmdb_id','metadata_source','tagline','age_rating','age_rating_country','collection','trailer_youtube'] as $field){
+  if(array_key_exists($field,$manual)&&$manual[$field]!==''&&$manual[$field]!==null)continue;
+  if(!isset($meta[$field])||$meta[$field]===null||$meta[$field]==='')continue;
+  $roDescription=in_array($field,['description','description_language','description_source'],true)&&strpos(strtolower((string)($meta['description_language']??'')),'ro')===0;
+  if($roDescription||empty($item[$field]))$item[$field]=$meta[$field];
+ }
+ return $item;
 }
+
 function remember_title_preview($item){
  if(!is_array($item))return;$id=strtolower((string)($item['imdb_id']??''));if(!preg_match('/^tt\d{5,12}$/',$id))return;
  if(function_exists('apcu_store'))@apcu_store('filme_preview_'.$id,$item,21600);
@@ -402,25 +437,16 @@ function latest_data($type,$limit=28){$type=$type==='tv'?'tv':'movies';$d=catalo
 function genre_data($genre,$page){if(cfg('hide_adult')&&$genre==='Adult')return null;$d=catalog_json('genres/'.slugify($genre).'/page-'.max(1,(int)$page).'.json');if($d&&isset($d['items'])){$d['items']=catalog_filter_items($d['items']);remember_title_previews($d['items']);}return $d;}
 function year_data($year,$page){$d=catalog_json('years/'.(int)$year.'/page-'.max(1,(int)$page).'.json');if($d&&isset($d['items'])){$d['items']=catalog_filter_items($d['items']);remember_title_previews($d['items']);}return $d;}
 function load_title($id,$typeHint=null){
-    if(title_is_blocked($id))return null;
-    if(!preg_match('/^tt\d{5,12}$/i',$id))return null;$id=strtolower($id);
-    $item=fetch_catalog_member(data_url('title-shards/'.substr($id,0,6).'.json'),$id);
-    if(is_array($item)&&is_public_item($item)){
-        if(subtitle_filter_active()&&!has_verified_ro_subtitle($id))return null;
-        $item=enrich_title_item($item);remember_title_preview($item);return $item;
-    }
-    // A transient GitHub Pages/shard failure must never turn a card already shown to the user into a false 404.
-    $preview=load_title_preview($id);
-    if(is_array($preview)&&is_public_item($preview)){
-        if($typeHint&&title_type($preview)!==($typeHint==='tv'?'tv':'movie'))$preview=null;
-        elseif(!(subtitle_filter_active()&&!has_verified_ro_subtitle($id))){
-            // The visitor gets the title immediately. Rich fallback metadata is warmed after the response.
-            $preview=enrich_title_item($preview);remember_title_preview($preview);return $preview;
-        }
-    }
-    $fallback=cinemeta_title($id,$typeHint);
-    if(is_array($fallback)&&!(subtitle_filter_active()&&!has_verified_ro_subtitle($id))){$fallback=enrich_title_item($fallback);remember_title_preview($fallback);return $fallback;}
-    return null;
+ if(!preg_match('/^tt\d{5,12}$/i',(string)$id))return null;$id=strtolower($id);if(title_is_blocked($id))return null;
+ $cached=runtime_cache_get('title-records',$id,3600);$item=$cached['value']??null;
+ if(!is_array($item)){$item=fetch_catalog_member(data_url('title-shards/'.substr($id,0,6).'.json'),$id);if(is_array($item))runtime_cache_put('title-records',$id,$item,3600);}
+ if(!is_array($item)){
+  // A provider-backed local row may recover a failed shard. Arbitrary Cinemeta IDs never establish availability.
+  $item=local_catalog_title($id);if(!$item)return null;
+  $fallback=cinemeta_title($id,title_type($item));if(is_array($fallback))foreach(['description','poster','background'] as $key)if(empty($item[$key])&&!empty($fallback[$key]))$item[$key]=$fallback[$key];
+ }
+ if(!is_public_item($item)||(subtitle_filter_active()&&!has_verified_ro_subtitle($id)))return null;
+ $item=enrich_title_item($item);remember_title_preview($item);return $item;
 }
 
 function search_titles($query,$limit=120){
@@ -471,47 +497,13 @@ function local_people_search($query,$limit=12){
 }
 
 function search_people($query,$limit=12){
-    $rawQuery=trim((string)$query);$q=normalize_text($rawQuery);if($q==='')return[];
-    $compact=str_replace(' ','',$q);$limit=max(1,min(25,(int)$limit));
-    if(preg_match('/^nm\d{5,12}$/',$compact)){
-        $person=load_person($compact);
-        return $person?[person_search_item($person['nconst'],$person['name']??$person['nconst'],['birth_year'=>$person['birth_year']??null,'professions'=>$person['professions']??[]])]:[];
-    }
-    if(strlen($compact)<2)return[];
-    if(is_file(dirname(__DIR__).'/data/people-search-v11/meta.json'))return local_people_search($rawQuery,$limit);
-
-    // IMDb autocomplete resolves a human name to nconst. We only expose IDs that
-    // are present in this site's own people index, so search never links to a 404.
-    $slug=str_replace(' ','_',normalize_text($rawQuery));
-    if($slug==='')return[];
-    $url='https://v3.sg.media-imdb.com/suggestion/names/x/'.rawurlencode($slug).'.json?includeVideos=0';
-    $doc=remote_json($url,21600);
-    if(!is_array($doc)){
-        $url='https://v3.sg.media-imdb.com/suggestion/x/'.rawurlencode($slug).'.json?includeVideos=0';
-        $doc=remote_json($url,21600);
-    }
-    $rows=is_array($doc)?(array)($doc['d']??[]):[];if(!$rows)return[];
-    $known=catalog_people_id_set();$scored=[];$fallbackChecks=0;
-    foreach($rows as $row){
-        if(!is_array($row))continue;
-        $id=strtolower(trim((string)($row['id']??'')));$name=trim((string)($row['l']??''));
-        if(!preg_match('/^nm\d{5,12}$/',$id)||$name==='')continue;
-        if(is_string($known)){
-            if(strpos($known,"\n".$id."\n")===false)continue;
-        }else{
-            // If the compact ID index is temporarily unavailable, validate only a
-            // few candidates against person shards to keep autocomplete responsive.
-            if($fallbackChecks>=3)break;$fallbackChecks++;
-            if(!load_person($id))continue;
-        }
-        $h=normalize_text($name);$score=0;
-        if($h===$q)$score=100;elseif(strpos($h,$q)===0)$score=90;elseif(strpos($h,$q)!==false)$score=75;else{$dist=levenshtein(substr($h,0,min(strlen($h),strlen($q)+3)),$q);if($dist<=2)$score=55-$dist*8;}
-        if($score<=0)continue;
-        $item=person_search_item($id,$name,['hint'=>trim((string)($row['s']??''))]);
-        if($item)$scored[]=['s'=>$score,'rank'=>(int)($row['rank']??PHP_INT_MAX),'i'=>$item];
-    }
-    usort($scored,function($a,$b){$d=$b['s']<=>$a['s'];if($d)return$d;return$a['rank']<=>$b['rank'];});
-    return array_slice(array_column($scored,'i'),0,$limit);
+ $q=normalize_text(trim((string)$query));$compact=str_replace(' ','',$q);$limit=max(1,min(25,(int)$limit));if($q==='')return [];
+ if(preg_match('/^nm\d{5,12}$/',$compact)){$person=load_person($compact);return $person?[person_search_item($person['nconst'],$person['name']??$person['nconst'],['birth_year'=>$person['birth_year']??null])]:[];}
+ if(strlen($compact)<3)return is_file(dirname(__DIR__).'/data/people-search-v11/meta.json')?local_people_search($query,$limit):[];
+ $doc=catalog_json('people-search/'.substr($compact,0,3).'.json',3600);if(!is_array($doc))return local_people_search($query,$limit);$scored=[];
+ foreach((array)($doc['items']??[]) as $row){if(!is_array($row)||count($row)<2)continue;$name=normalize_text($row[1]);$score=$name===$q?100:(strpos($name,$q)===0?90:(strpos($name,$q)!==false?75:0));if(!$score)continue;
+ $item=person_search_item($row[0],$row[1],['birth_year'=>$row[2]??null,'professions'=>$row[3]??[],'hint'=>implode(' · ',array_map('person_profession_label',(array)($row[3]??[])))]);if($item)$scored[]=['score'=>$score,'item'=>$item];}
+ usort($scored,static function($a,$b){return ($b['score']<=>$a['score'])?:strcmp($a['item']['name'],$b['item']['name']);});return array_slice(array_column($scored,'item'),0,$limit);
 }
 
 function pagination_window($page,$pages,$radius=3){$page=max(1,min((int)$page,(int)$pages));$pages=max(1,(int)$pages);$o=[];$s=max(1,$page-$radius);$e=min($pages,$page+$radius);if($s>1)$o[]=1;if($s>2)$o[]='…';for($i=$s;$i<=$e;$i++)$o[]=$i;if($e<$pages-1)$o[]='…';if($e<$pages)$o[]=$pages;return$o;}

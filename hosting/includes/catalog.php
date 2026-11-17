@@ -1,36 +1,43 @@
 <?php
 require_once __DIR__.'/catalog-sync.php';
-// A streamed, compact index avoids loading the entire catalog into PHP memory.
-function catalog_filters() {
- $type=query_string('tip','all');$sort=query_string('sort','recent');$genre=query_string('gen','');
- if(!in_array($type,['all','movies','tv'],true))$type='all';
- if(!in_array($sort,['recent','rating','year'],true))$sort='recent';
- if(!isset(genre_map()[$genre]))$genre='';
- $from=max(1880,min(2100,(int)(query_string('de')?:'1880')));$to=max($from,min(2100,(int)(query_string('pana')?:'2100')));
- return ['adaugate'=>query_string('adaugate','')==='azi'?'azi':'','tip'=>$type,'gen'=>$genre,'de'=>$from,'pana'=>$to,'nota'=>max(0,min(10,(float)query_string('nota','0'))),'sort'=>$sort,'q'=>substr(trim(query_string('q')),0,200)];
+function catalog_filters(){
+ $type=query_string('tip','all');$sort=query_string('sort','recent');$genre=query_string('gen','');$kind=query_string('format','');
+ if(!in_array($type,['all','movies','tv'],true))$type='all';if(!in_array($sort,['recent','rating','year'],true))$sort='recent';if(!isset(genre_map()[$genre]))$genre='';
+ if(!in_array($kind,['','feature','short','documentary','special','series'],true))$kind='';
+ $from=max(1880,min(2100,(int)(query_string('de')?:1880)));$to=max($from,min(2100,(int)(query_string('pana')?:2100)));
+ return ['adaugate'=>query_string('adaugate')==='azi'?'azi':'','tip'=>$type,'gen'=>$genre,'de'=>$from,'pana'=>$to,'nota'=>max(0.0,min(10.0,(float)query_string('nota','0'))),'voturi'=>max(0,min(10000000,(int)query_string('voturi','0'))),'format'=>$kind,'sort'=>$sort,'q'=>substr(trim(query_string('q')),0,200)];
 }
-function catalog_link($filters=[],$page=1) {
- $params=array_filter($filters,static function($v,$k){return !($v===''||($k==='tip'&&$v==='all')||($k==='de'&&(int)$v===1880)||($k==='pana'&&(int)$v===2100)||($k==='nota'&&(float)$v===0)||($k==='sort'&&$v==='recent'));},ARRAY_FILTER_USE_BOTH);
- if($page>1)$params['page']=$page;
- return '/catalog/'.($params?'?'.http_build_query($params):'');
+function catalog_link($filters=[],$page=1){
+ $params=array_filter($filters,static function($v,$k){return !($v===''||($k==='tip'&&$v==='all')||($k==='de'&&(int)$v===1880)||($k==='pana'&&(int)$v===2100)||($k==='nota'&&(float)$v===0.0)||($k==='voturi'&&(int)$v===0)||($k==='sort'&&$v==='recent'));},ARRAY_FILTER_USE_BOTH);
+ if($page>1)$params['page']=$page;return '/catalog/'.($params?'?'.http_build_query($params):'');
 }
-function filtered_catalog($f,$page=1,$per=36) {
- $file=catalog_release_path($f['sort']);
- if(!is_file($file)||!function_exists('gzopen'))return ['unavailable'=>true,'items'=>[],'total'=>0,'pages'=>1];
- $handle=@gzopen($file,'rb');if(!$handle)return ['unavailable'=>true,'items'=>[],'total'=>0,'pages'=>1];
- $per=max(1,min(200,(int)$per));$page=max(1,min(100000,(int)$page));$offset=($page-1)*$per;$total=0;$items=[];$needle=normalize_text($f['q']);
- while(!gzeof($handle)){
-  $line=gzgets($handle);if($line===false)break;$r=json_decode($line,true);if(!is_array($r)||count($r)<11)continue;
+function catalog_row_to_item($r){
+ return ['imdb_id'=>$r[0],'type'=>$r[1],'title'=>$r[2],'romanian_title'=>$r[3]?:null,'year'=>$r[4]?:null,'rating'=>$r[5]?:null,'votes'=>$r[6],'genres'=>array_values(array_filter(explode('|',$r[7]))),'poster'=>$r[8]?:null,'background'=>$r[9]?:null,'runtime'=>$r[11]??0,'original_title'=>$r[12]??null,'site_added_at'=>$r[13]??null,'title_kind'=>$r[14]??''];
+}
+function local_catalog_title($id){
+ $file=catalog_release_path('recent');$f=is_file($file)?@gzopen($file,'rb'):false;if(!$f)return null;
+ try{while(!gzeof($f)){$line=gzgets($f);if($line===false)break;$r=json_decode($line,true);if(is_array($r)&&count($r)>=14&&($r[0]??'')===$id)return catalog_row_to_item($r);}}finally{gzclose($f);}return null;
+}
+function filtered_catalog($f,$page=1,$per=36){
+ $file=catalog_release_path($f['sort']);$empty=['unavailable'=>true,'items'=>[],'total'=>0,'pages'=>1,'page'=>1];if(!is_file($file)||!function_exists('gzopen'))return $empty;
+ $per=max(1,min(200,(int)$per));$page=max(1,min(100000,(int)$page));$offset=($page-1)*$per;$needle=normalize_text($f['q']);
+ $cacheId=sha1($file.':'.(string)filemtime($file).':'.json_encode([$f,$page,$per,date('Y-m-d')])) ;
+ $cached=function_exists('runtime_cache_get')?runtime_cache_get('queries',$cacheId,300):null;if($cached&&is_array($cached['value'])){remember_title_previews($cached['value']['items']);return $cached['value'];}
+ $stream=@gzopen($file,'rb');if(!$stream)return $empty;$total=0;$items=[];
+ while(!gzeof($stream)){
+  $line=gzgets($stream);if($line===false)break;$r=json_decode($line,true);if(!is_array($r)||count($r)<14)continue;$genres=explode('|',$r[7]);
   if(($f['adaugate']??'')==='azi'&&!catalog_added_today($r[13]??null))continue;
   if($f['tip']!=='all'&&($r[1]==='tv'?'tv':'movies')!==$f['tip'])continue;
-  if($f['gen']!==''&&!in_array($f['gen'],explode('|',$r[7]),true))continue;
+  if($f['gen']!==''&&!in_array($f['gen'],$genres,true))continue;
   if(($f['de']>1880||$f['pana']<2100)&&((int)$r[4]<$f['de']||(int)$r[4]>$f['pana']))continue;
-  if((float)$r[5]<$f['nota'])continue;
+  if((float)$r[5]<$f['nota']||(int)$r[6]<(int)($f['voturi']??0))continue;
+  $kind=$f['format']??'';$sourceKind=$r[14]??'';
+  if($kind==='documentary'&&!in_array('Documentary',$genres,true))continue;
+  if($kind!==''&&$kind!=='documentary'&&$sourceKind!==$kind)continue;
   if($needle!==''&&strpos(normalize_text($r[2].' '.$r[3].' '.($r[12]??'')),$needle)===false)continue;
-  if(!is_public_item(['imdb_id'=>$r[0],'genres'=>explode('|',$r[7])])||title_is_blocked($r[0])||(subtitle_filter_active()&&!has_verified_ro_subtitle($r[0])))continue;
-  if($total>=$offset&&count($items)<$per)$items[]=['imdb_id'=>$r[0],'type'=>$r[1],'title'=>$r[2],'romanian_title'=>$r[3]?:null,'year'=>$r[4]?:null,'rating'=>$r[5]?:null,'votes'=>$r[6],'genres'=>explode('|',$r[7]),'poster'=>$r[8]?:null,'background'=>$r[9]?:null,'runtime'=>$r[11]??0,'original_title'=>$r[12]??null,'site_added_at'=>$r[13]??null];
-  $total++;
+  if(!is_public_item(['imdb_id'=>$r[0],'genres'=>$genres])||title_is_blocked($r[0])||(subtitle_filter_active()&&!has_verified_ro_subtitle($r[0])))continue;
+  if($total>=$offset&&count($items)<$per)$items[]=catalog_row_to_item($r);$total++;
  }
- gzclose($handle);remember_title_previews($items);return ['items'=>$items,'total'=>$total,'pages'=>max(1,(int)ceil($total/$per)),'page'=>$page];
+ gzclose($stream);$doc=['items'=>$items,'total'=>$total,'pages'=>max(1,(int)ceil($total/$per)),'page'=>$page];
+ if(function_exists('runtime_cache_put'))runtime_cache_put('queries',$cacheId,$doc,300);remember_title_previews($items);return $doc;
 }
-

@@ -8,6 +8,17 @@ on:
       - 'editorial/**'
       - '.github/workflows/update-catalog.yml'
   workflow_dispatch:
+    inputs:
+      metadata_batch:
+        description: 'Maximum TMDb titles in this resumable batch'
+        type: choice
+        default: '2000'
+        options: ['400', '1000', '2000']
+      season_batch:
+        description: 'Maximum TV seasons to enrich'
+        type: choice
+        default: '200'
+        options: ['0', '50', '200', '500']
   schedule:
     - cron: '23 */4 * * *'
 
@@ -88,7 +99,8 @@ jobs:
           CATALOG_BASELINE_DIR: .catalog-work/bootstrap-previous-day
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN || secrets.TMDB_READ_ACCESS_TOKEN }}
-          TMDB_RO_BATCH_SIZE: '400'
+          TMDB_RO_BATCH_SIZE: ${{ inputs.metadata_batch || '2000' }}
+          TMDB_SEASON_BATCH_SIZE: ${{ inputs.season_batch || '200' }}
         run: |
           python scripts/build_catalog.py --out public/data --work .catalog-work --vse-cache .catalog-cache/vse --page-size 70
           touch public/.nojekyll
@@ -101,6 +113,7 @@ jobs:
 
       - name: Verify generated catalog
         run: |
+          test -s public/data/home.json
           test -s public/data/meta.json
           test -s public/data/movies/page-1.json
           test -s public/data/tv/page-1.json

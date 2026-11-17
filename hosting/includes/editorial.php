@@ -11,8 +11,8 @@ function editorial_entries(){
     ];
 }
 function editorial_catalogue_items(){
-    $wanted=array_fill_keys(array_keys(editorial_entries()),true);$found=[];
-    $file=dirname(__DIR__).'/data/catalog-v8-rating.ndjson.gz';$stream=@gzopen($file,'rb');if(!$stream)return [];
+    $wanted=array_fill_keys(['tt0293662','tt0479884','tt0317740'],true);$found=[];
+    $file=catalog_release_path('rating');$stream=@gzopen($file,'rb');if(!$stream)return [];
     while(!gzeof($stream)){$line=gzgets($stream);if($line===false)break;$r=json_decode($line,true);if(!is_array($r)||!isset($wanted[$r[0]??'']))continue;
         $found[$r[0]]=['imdb_id'=>$r[0],'type'=>$r[1],'title'=>$r[2],'romanian_title'=>$r[3]?:null,'year'=>$r[4],'rating'=>$r[5],'genres'=>explode('|',$r[7]),'poster'=>$r[8]?:null];
         if(count($found)===count($wanted))break;

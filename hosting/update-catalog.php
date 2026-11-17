@@ -19,14 +19,15 @@ function sync_validate_rows($path,$total){
     }}finally{gzclose($f);}
     if($count!==$total)sync_fail('Index row count differs from manifest');return $count;
 }
-$root=dirname(__DIR__).'/data/catalog-sync';$lock=null;$stage=null;$statusCode=0;
+$appRoot=is_file(__DIR__.'/config.php')?__DIR__:dirname(__DIR__);
+$root=$appRoot.'/data/catalog-sync';$lock=null;$stage=null;$statusCode=0;
 try {
     if(!function_exists('curl_init')||!function_exists('gzopen'))sync_fail('PHP cURL and zlib are required');
     if(!is_dir($root)&&!mkdir($root,0700,true))sync_fail('Cannot create sync directory');
     $lock=fopen($root.'/sync.lock','c');if(!$lock||!flock($lock,LOCK_EX|LOCK_NB)){echo "Another synchronization is active\n";return;}
     $pointer=$root.'/current.json';$current=is_file($pointer)?json_decode(file_get_contents($pointer),true):[];
     if(in_array('--status',$argv,true)){echo json_encode($current,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT)."\n";return;}
-    $config=require dirname(__DIR__).'/config.php';$local=dirname(__DIR__).'/config.local.php';if(is_file($local))$config=array_replace($config,require $local);
+    $config=require $appRoot.'/config.defaults.php';if(is_file($appRoot.'/config.php'))$config=array_replace($config,require $appRoot.'/config.php');$local=$appRoot.'/config.local.php';if(is_file($local))$config=array_replace($config,require $local);
     $base=rtrim((string)($config['data_base_url']??''),'/').'/sync/';
     if($base!=='https://bebe2007.github.io/filme/data/sync/')sync_fail('Unexpected catalog source');
     $manifest=json_decode(sync_get($base.'manifest.json',null,65536),true);

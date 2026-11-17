@@ -2,7 +2,7 @@
 // Exercise the real streamed reader and listing helpers with isolated releases.
 $root=sys_get_temp_dir().'/filme-listings-'.bin2hex(random_bytes(5));
 mkdir($root.'/includes',0700,true);
-copy(__DIR__.'/catalog-sync.php',$root.'/includes/catalog-sync.php');
+copy(__DIR__.'/includes/catalog-sync.php',$root.'/includes/catalog-sync.php');
 copy(__DIR__.'/includes/catalog.php',$root.'/includes/catalog.php');
 copy(__DIR__.'/includes/collections.php',$root.'/includes/collections.php');
 function query_string($key,$default=''){return $GLOBALS['query'][$key]??$default;}

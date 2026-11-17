@@ -87,14 +87,16 @@ def collect(con,cache,fetch,interval=1.5,max_pages=10000):
   (cache/('retained-'+name)).write_text('\n'.join(r[0] for r in con.execute('SELECT imdb_id FROM titles WHERE type=? ORDER BY imdb_id',(typ,)))+'\n')
  return responses,report,metadata
 
-def publish_indexes(con,out):
+def publish_indexes(con,out,editorial=None):
  """Same row layout used by the installed PHP filtered catalog."""
  out=Path(out);folder=out/'sync';folder.mkdir(parents=True,exist_ok=True)
  rows=[]
- history=read(out/'catalog-history.json').get('items',{})
+ history=read(out/'catalog-history.json').get('items',{});editorial=editorial or {}
+ columns={r[1] for r in con.execute('PRAGMA table_info(titles)')}
+ kinds=dict(con.execute('SELECT imdb_id,title_kind FROM titles')) if 'title_kind' in columns else {}
  for r in con.execute('SELECT imdb_id,type,title,original_title,romanian_title,year,rating,votes,genres,runtime FROM titles'):
-  imdb,typ,title,original,ro,year,rating,votes,genres,runtime=r;h=history.get(imdb,{})
-  rows.append([imdb,typ,ro or title or imdb,ro or '',year or 0,rating or 0,votes or 0,(genres or '').replace(',','|'),h.get('poster',''),'',h.get('site_added_at') or h.get('provider_added_at') or '',runtime or 0,original or '',h.get('site_added_at') or ''])
+  imdb,typ,title,original,ro,year,rating,votes,genres,runtime=r;h=history.get(imdb,{});extra=editorial.get(imdb,{})
+  rows.append([imdb,typ,ro or title or imdb,ro or '',year or 0,rating or 0,votes or 0,(genres or '').replace(',','|'),extra.get('poster') or h.get('poster',''),extra.get('background') or '',h.get('site_added_at') or h.get('provider_added_at') or '',runtime or 0,original or '',h.get('site_added_at') or '',kinds.get(imdb,'')])
  orders={'recent':lambda r:(r[10],r[4],r[0]),'rating':lambda r:(r[5],r[6],r[0]),'year':lambda r:(r[4],r[0])};files={}
  for kind,key in orders.items():
   name=f'catalog-v8-{kind}.ndjson.gz';path=folder/name

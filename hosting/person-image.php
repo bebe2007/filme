@@ -9,10 +9,10 @@ if (!preg_match('/^nm\d{5,12}$/', $id)) {
     readfile($placeholder); exit;
 }
 
-$metaFile = ''; // Diskless image resolution
+// Cache only source URLs and metadata, never image binaries.
 $positiveTtl = max(86400, (int)cfg('person_image_ttl'));
 $negativeTtl = 3600;
-$resolverVersion = 4;
+$resolverVersion = 5;
 
 function serve_person_image_url($url) {
     header('Cache-Control: public, max-age=604800, stale-while-revalidate=2592000');
@@ -30,7 +30,7 @@ function valid_person_image_url($url) {
     $host = strtolower((string)parse_url($url, PHP_URL_HOST));
     return $host === 'image.tmdb.org' || $host === 'm.media-amazon.com' || str_ends_with($host, '.media-amazon.com');
 }
-$cacheKey='filme_photo_'.$id; $hit=false; $oldMeta=function_exists('apcu_fetch')?apcu_fetch($cacheKey,$hit):null; if(!$hit)$oldMeta=null;
+$cacheKey=$id.':v'.$resolverVersion.':'.(tmdb_enabled()?'tmdb':'base'); $cached=runtime_cache_get('person-images',$cacheKey,max($positiveTtl,$negativeTtl));$oldMeta=$cached['value']??null;
 if (is_array($oldMeta) && valid_person_image_url($oldMeta['url'] ?? '') && time() - (int)($oldMeta['checked'] ?? 0) < $positiveTtl) {
     serve_person_image_url($oldMeta['url']);
 }
@@ -96,8 +96,8 @@ if ($url === '') {
 }
 
 if (valid_person_image_url($url)) {
-    if(function_exists('apcu_store'))@apcu_store($cacheKey,['checked'=>time(),'url'=>$url,'resolver_version'=>$resolverVersion],$positiveTtl);
+    runtime_cache_put('person-images',$cacheKey,['checked'=>time(),'url'=>$url,'resolver_version'=>$resolverVersion],$positiveTtl);
     serve_person_image_url($url);
 }
-if(function_exists('apcu_store'))@apcu_store($cacheKey,['checked'=>time(),'url'=>'','resolver_version'=>$resolverVersion],$negativeTtl);
+runtime_cache_put('person-images',$cacheKey,['checked'=>time(),'url'=>'','resolver_version'=>$resolverVersion],$negativeTtl);
 serve_person_placeholder($placeholder);
