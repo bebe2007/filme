@@ -110,7 +110,7 @@ $cssVersion=@filemtime(__DIR__.'/assets/css/app.css')?:time();$jsVersion=@filemt
 <?php foreach($schemas as $schema):?><script type="application/ld+json" nonce="<?=e($cspNonce)?>"><?=safe_json($schema)?></script><?php endforeach;?>
 <link rel="stylesheet" href="/assets/css/cinema-gold.css?v=20261113.2">
 <link rel="stylesheet" href="/assets/css/cinema-premiere.css?v=20261113-4">
-<link rel="stylesheet" href="/assets/css/cinema-compact.css?v=20261117-2">
+<link rel="stylesheet" href="/assets/css/cinema-compact.css?v=20261117-3">
 </head><body class="cinema-v9 cinema-v10 cinema-v11 cinema-v12 cinema-v13 cinema-premiere route-<?=e($route)?>" data-version="<?=e(cfg('version'))?>" data-suggest-url="/api.php?action=suggest&q=" data-provider-origin="<?=e(parse_url(cfg('provider_base_url'),PHP_URL_SCHEME).'://'.parse_url(cfg('provider_base_url'),PHP_URL_HOST))?>">
 <div class="page-scenery" aria-hidden="true"><img src="<?=e($pageSceneryUrl)?>" data-fallback="<?=e($pageSceneryFallback)?>" alt="" referrerpolicy="no-referrer" decoding="async" fetchpriority="high"></div>
 <a class="skip-link" href="#mainContent">Sari la conținut</a>
