@@ -28,6 +28,7 @@ def main():
     entries[Path('RELEASE-v15.json')]=json.dumps({'version':'15.0.0','files':manifest},indent=2).encode()
     a.output.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(a.output,'w',zipfile.ZIP_DEFLATED) as z:
-        for rel,content in sorted(entries.items()):z.writestr(str(rel),content)
+        for rel,content in sorted(entries.items()):
+            entry=zipfile.ZipInfo(str(rel));entry.external_attr=0o100644 << 16;entry.compress_type=zipfile.ZIP_DEFLATED;z.writestr(entry,content)
     print(json.dumps({'output':str(a.output),'files':len(entries),'bytes':a.output.stat().st_size,'sha256':hashlib.sha256(a.output.read_bytes()).hexdigest()}))
 if __name__=='__main__':main()
