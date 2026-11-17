@@ -86,6 +86,9 @@ jobs:
       - name: Build static catalog
         env:
           CATALOG_BASELINE_DIR: .catalog-work/bootstrap-previous-day
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN || secrets.TMDB_READ_ACCESS_TOKEN }}
+          TMDB_RO_BATCH_SIZE: '400'
         run: |
           python scripts/build_catalog.py --out public/data --work .catalog-work --vse-cache .catalog-cache/vse --page-size 70
           touch public/.nojekyll

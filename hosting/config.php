@@ -23,7 +23,7 @@ return [
     'opensubtitles_user_agent' => 'FilmeBratuMarian v3.1.0',
     'trailer_meta_base_url' => 'https://v3-cinemeta.strem.io',
     'trailer_cache_ttl' => 86400,
-    'tmdb_api_key' => '',
-    'tmdb_api_token' => '',
+    'tmdb_api_key' => getenv('TMDB_API_KEY') ?: '',
+    'tmdb_api_token' => getenv('TMDB_API_TOKEN') ?: (getenv('TMDB_READ_ACCESS_TOKEN') ?: ''),
     'opensubtitles_api_key' => '',
 ];

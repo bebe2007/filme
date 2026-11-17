@@ -27,3 +27,13 @@ jobs:
           php hosting/test-sync.php
           php hosting/test-collections.php
           node --check hosting/assets/js/catalog-sync-ui.js
+
+  localization-access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify TMDb secret access without revealing credentials
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN || secrets.TMDB_READ_ACCESS_TOKEN }}
+        run: python scripts/tmdb_localization.py --check

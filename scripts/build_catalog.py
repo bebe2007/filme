@@ -638,7 +638,7 @@ def build_title_shards(con: sqlite3.Connection, out: Path, editorial=None) -> No
             }
             if imdb in editorial:
                 shard[imdb]["editorial"]=editorial[imdb]
-                for key in ("description","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url"):
+                for key in ("description","description_language","description_source","metadata_source","tagline","poster","background","trailer_youtube","country","language","released","age_rating","source_url","trailer_source_url"):
                     if key in editorial[imdb]:
                         shard[imdb][key]=editorial[imdb][key]
         write_json(out/'title-shards'/f'{prefix}.json',shard)
@@ -902,7 +902,13 @@ def main():
         import_principals(con,downloads/'title.principals.tsv.gz')
         import_people(con,downloads/'name.basics.tsv.gz')
         editorial=load_editorial_overrides(Path(args.editorial).resolve())
+        from tmdb_localization import enrich_catalog
+        localized,localization_status=enrich_catalog(con,vse_cache/'tmdb-ro.json',vse_cache/'presentation.json',snapshots)
+        # Manual copy always wins over sourced TMDb translations.
+        for imdb,fields in localized.items():
+            editorial[imdb]={**fields,**editorial.get(imdb,{})}
         build_output(con,out,args.page_size,editorial,vse_cache/'presentation.json')
+        sync_write(out/'localization-status.json',localization_status)
         sync_write(out/'provider-sync-status.json',sync_report)
         publish_indexes(con,out)
     finally:

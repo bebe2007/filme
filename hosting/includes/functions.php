@@ -244,7 +244,7 @@ function public_genres($genres){return array_values(array_filter((array)$genres,
 function is_public_item($item){return !(cfg('hide_adult') && in_array('Adult',(array)($item['genres']??[]),true));}
 function filter_public_items($items){return array_values(array_filter((array)$items,'is_public_item'));}
 
-function title_name($item) { return $item['romanian_title'] ?? $item['title'] ?? $item['original_title'] ?? $item['imdb_id'] ?? 'Titlu'; }
+function title_name($item) { foreach(['romanian_title','title','original_title','imdb_id'] as $field){$value=trim((string)($item[$field]??''));if($value!=='')return $value;}return 'Titlu'; }
 function title_type($item) { return (($item['type']??'')==='tv')?'tv':'movie'; }
 function type_label($type) { return $type==='tv'?'Serial':'Film'; }
 function title_path($item){$id=$item['imdb_id']??'';return (title_type($item)==='tv'?'/serial/':'/film/').rawurlencode($id).'/';}
@@ -299,6 +299,7 @@ function tmdb_metadata($item){
     $posterPath=trim((string)($row['poster_path']??''));$backdropPath=trim((string)($row['backdrop_path']??''));
     $out=[
         'metadata_source'=>'TMDb','tmdb_id'=>(int)($row['id']??0),
+        'romanian_title'=>stripos($preferred,'ro')===0?trim((string)($row[$type==='tv'?'name':'title']??'')):null,
         'description'=>$overview?:null,'description_language'=>$descLang?:null,'description_source'=>$overview!==''?'TMDb':null,
         'poster'=>$posterPath!==''?'https://image.tmdb.org/t/p/w780'.$posterPath:null,
         'background'=>$backdropPath!==''?'https://image.tmdb.org/t/p/w1280'.$backdropPath:null,
@@ -343,7 +344,7 @@ function resolve_title_metadata($item){
 function enrich_title_item($item){
     if(!is_array($item))return $item;$meta=resolve_title_metadata($item);if(!is_array($meta))return $item;
     if(stripos((string)($meta['description_language']??''),'ro')===0 && empty($item['editorial']['description'])){foreach(['description','description_language','description_source'] as $field){if(isset($meta[$field]))$item[$field]=$meta[$field];}}
-    foreach(['description','description_language','description_source','poster','background','image_source','language','released','tmdb_id','metadata_source'] as $k){
+    foreach(['romanian_title','description','description_language','description_source','poster','background','image_source','language','released','tmdb_id','metadata_source'] as $k){
         if((!isset($item[$k])||$item[$k]===null||$item[$k]==='')&&isset($meta[$k])&&$meta[$k]!==null&&$meta[$k]!=='')$item[$k]=$meta[$k];
     }
     return $item;

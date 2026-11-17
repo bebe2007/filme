@@ -14,7 +14,8 @@ Copiază conținutul acestui director, inclusiv `.htaccess`, în rădăcina publ
 - `assets/img/favicon-cinema.svg`: simbolul pentru tab.
 - `assets/img/cinema-banner.webp`: bannerul furnizat de proprietar, optimizat pentru web.
 - `assets/css/cinema-gold.css`: baza vizuală cu accente aurii.
-- `assets/css/cinema-premiere.css`: carduri verticale responsive, fundaluri pe toată lățimea și suport reduced-motion.
+- `assets/css/cinema-premiere.css`: fundaluri pe toată lățimea și suport reduced-motion.
+- `assets/css/cinema-compact.css`: carduri cinematografice compacte, cu scenă panoramică și poster mic; 264 px pe desktop, 225–238 px pe telefon.
 
 Pagina principală afișează direct grila sub banner, fără caruselul mare. Fiecare pagină are un fundal decorativ: imaginea titlului pentru filme și seriale, prima imagine disponibilă în liste, respectiv bannerul ca rezervă. Straturile întunecate protejează lizibilitatea. Antetul rămâne în fluxul paginii pentru a nu acoperi informațiile.
 
@@ -35,3 +36,13 @@ Filmele folosesc ID-ul IMDb. Seriale: ID IMDb + sezon + episod. Subtitrarea ceru
 - 18 teste Python ale catalogului trecute.
 - Verificări live pentru prima pagină, film, serial, rutarea sezon/episod și preferințele media.
 - Copie de revenire păstrată pe găzduire înaintea instalării.
+
+## Localizare TMDb din GitHub Secrets
+
+Workflow-ul catalogului citește `TMDB_API_KEY` sau `TMDB_API_TOKEN` / `TMDB_READ_ACCESS_TOKEN` din GitHub Actions Secrets. Nu publica cheia în cod și nu o pune în JavaScript. `hosting/api.php` este un endpoint al aplicației, nu o cheie API TMDb.
+
+`scripts/tmdb_localization.py` verifică traducerile cu limba `ro` din endpointul TMDb `translations`, păstrează cache-ul în directorul existent al catalogului și procesează până la 400 de titluri neactualizate pe execuție. Titlurile recente au prioritate. Titlurile IMDb românești existente și textele editoriale manuale au prioritate. Nu etichetează sinopsisuri englezești drept românești și nu inventează traduceri.
+
+Datele sunt înglobate în indexuri, feeduri și paginile virtuale înainte de publicare; cheia rămâne în GitHub. `data/localization-status.json` publică numai contoare și starea configurării. Dacă secretul lipsește, catalogul funcționează cu datele existente; traducerea integrală nu este garantată. După adăugarea secretului, rulează workflow-ul **Build movie catalog data** pentru prima actualizare.
+
+Găzduirea poate folosi separat aceleași variabile de mediu PHP sau un fișier privat `config.local.php`, dar un secret GitHub nu este transmis automat procesului PHP.
