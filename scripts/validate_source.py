@@ -20,5 +20,5 @@ for path in ROOT.rglob('*'):
                 f.write(script);f.flush();run(['node','--check',f.name])
             js_count+=1
     if path.suffix=='.svg':ET.parse(path)
-for name in ('test-sync.php','test-collections.php','test-runtime.php'):run([php,str(ROOT/'hosting'/name)])
+for name in ('test-sync.php','test-collections.php','test-runtime.php','test-discover.php'):run([php,str(ROOT/'hosting'/name)])
 print(f'{len(files)} PHP files, {js_count} JavaScript scripts, SVG syntax and PHP runtime checks passed.')

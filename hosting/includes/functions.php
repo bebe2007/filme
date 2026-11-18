@@ -272,7 +272,7 @@ function public_genres($genres){return array_values(array_filter((array)$genres,
 function is_public_item($item){return !(cfg('hide_adult') && in_array('Adult',(array)($item['genres']??[]),true));}
 function filter_public_items($items){return array_values(array_filter((array)$items,'is_public_item'));}
 
-function title_name($item) { foreach(['romanian_title','title','original_title','imdb_id'] as $field){$value=trim((string)($item[$field]??''));if($value!=='')return $value;}return 'Titlu'; }
+function title_name($item) { if(function_exists('editorial_entries')){$entry=editorial_entries()[$item['imdb_id']??'']??[];if(!empty($entry['heading']))return $entry['heading'];}foreach(['romanian_title','title','original_title','imdb_id'] as $field){$value=trim((string)($item[$field]??''));if($value!=='')return $value;}return 'Titlu'; }
 function title_type($item) { return (($item['type']??'')==='tv')?'tv':'movie'; }
 function type_label($type) { return $type==='tv'?'Serial':'Film'; }
 function title_path($item){$id=$item['imdb_id']??'';return (title_type($item)==='tv'?'/serial/':'/film/').rawurlencode($id).'/';}

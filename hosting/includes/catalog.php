@@ -41,3 +41,25 @@ function filtered_catalog($f,$page=1,$per=36){
  gzclose($stream);$doc=['items'=>$items,'total'=>$total,'pages'=>max(1,(int)ceil($total/$per)),'page'=>$page];
  if(function_exists('runtime_cache_put'))runtime_cache_put('queries',$cacheId,$doc,300);remember_title_previews($items);return $doc;
 }
+
+/** Today's additions first; complete the five from the preceding seven days. */
+function select_discover_movies(array $items,DateTimeImmutable $now,int $limit=5):array{
+ $zone=new DateTimeZone('Europe/Bucharest');$today=$now->setTimezone($zone)->setTime(0,0);$since=$today->modify('-7 days');$rated=[];
+ foreach($items as $item){if(($item['type']??'movie')!=='movie'||(!empty($item['title_kind'])&&$item['title_kind']!=='feature')||(float)($item['rating']??0)<=0||empty($item['site_added_at']))continue;
+  try{$added=(new DateTimeImmutable($item['site_added_at']))->setTimezone($zone);}catch(Exception $e){continue;}
+  if($added>$now->setTimezone($zone)||$added<$since)continue;$item['_added']=$added->getTimestamp();$rated[$item['imdb_id']]=$item;
+ }
+ $sort=static function($a,$b){return ((float)$b['rating']<=>(float)$a['rating'])?:((int)($b['votes']??0)<=>(int)($a['votes']??0))?:(($b['_added']??0)<=>($a['_added']??0))?:strcmp($a['imdb_id'],$b['imdb_id']);};
+ $current=array_values(array_filter($rated,static fn($x)=>$x['_added']>=$today->getTimestamp()));usort($current,$sort);$chosen=array_slice($current,0,$limit);$seen=array_column($chosen,'imdb_id');
+ if(count($chosen)<$limit){$older=array_values(array_filter($rated,static fn($x)=>!in_array($x['imdb_id'],$seen,true)));usort($older,$sort);$chosen=array_merge($chosen,array_slice($older,0,$limit-count($chosen)));}
+ usort($chosen,$sort);foreach($chosen as &$item)unset($item['_added']);unset($item);return $chosen;
+}
+function home_discover_items(int $limit=5):array{
+ $file=catalog_release_path('recent');if(!is_file($file))return [];$now=new DateTimeImmutable('now',new DateTimeZone('Europe/Bucharest'));
+ $key=$file.':'.filemtime($file).':'.$now->format('Y-m-d').':'.$limit.':features';$cache=runtime_cache_get('discover-v16',$key,120);if($cache&&is_array($cache['value']))return $cache['value'];
+ $stream=@gzopen($file,'rb');if(!$stream)return [];$items=[];$cutoff=$now->setTime(0,0)->modify('-7 days')->getTimestamp();
+ try{while(!gzeof($stream)){$line=gzgets($stream);if($line===false)break;$row=json_decode($line,true);if(!is_array($row)||count($row)<14||($row[1]??'')!=='movie'||(float)($row[5]??0)<=0||empty($row[13]))continue;
+  $stamp=strtotime($row[13]);if($stamp===false||$stamp<$cutoff)continue;$item=catalog_row_to_item($row);if(!is_public_item($item)||title_is_blocked($item['imdb_id']))continue;$items[]=$item;}}
+ finally{gzclose($stream);}
+ $items=select_discover_movies($items,$now,$limit);runtime_cache_put('discover-v16',$key,$items,120);remember_title_previews($items);return $items;
+}

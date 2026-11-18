@@ -1,7 +1,7 @@
 <?php
 // Public defaults. Private credentials belong in ignored config.local.php.
 return [
-    'version' => '15.0.0',
+    'version' => '16.0.0',
     'site_name' => 'Filme & Seriale',
     'site_url' => 'https://filme.bratu-marian.com',
     'owner_name' => 'Marian Bratu',
