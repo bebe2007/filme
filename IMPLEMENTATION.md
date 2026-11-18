@@ -17,7 +17,7 @@ Baseline: `677560f52fc8786ad8963ab948886b4f9799907f`.
 - [x] Subtitle UI binding and honest availability labels.
 - [x] Correct CLI paths, stable release pointers and deployment/rollback process.
 - [x] Validate legacy player inputs; separate legacy static variants from the PHP application.
-- [ ] Automated checks, representative live checks, backup and hosting publication.
+- [x] Automated checks, representative live checks, backup and hosting publication.
 
 ## Boundaries
 
@@ -39,3 +39,5 @@ Changes, deployment identifiers and remaining blockers will be recorded here.
 - Live: home, search suggestions, film poster 260×390, favorite consent/save/remove, TV season switch (season 8 loaded 6 episodes), mobile home/film/TV at a 390px iframe viewport. Film mobile content width equals viewport (375px excluding scrollbar).
 - Catalog build run 44208990261 stopped because provider latest endpoints returned HTTP 403. The previous verified catalog was retained; no incomplete data was published.
 - TMDb credentials and initial enrichment are still pending. Full Romanian coverage depends on translations available at TMDb.
+
+Final interface source: `38976cbdb6d0b017ed1cc406320a2fcedb0d74f5`; validation run 44209764627 passed. Asset query versions now use content hashes. Public previews were moved outside public_html; ZIP/backup/log downloads and old preview/debug PHP routes are denied. Catalog retry run 44209764579 is in progress. GitHub secret setup is waiting for interactive account authentication; no TMDb key was received or committed.
