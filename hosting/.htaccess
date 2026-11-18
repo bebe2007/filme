@@ -4,6 +4,8 @@ RewriteEngine On
 RewriteBase /
 
 # Runtime metadata, release tools and tests are not public resources.
+RewriteRule \.(?:zip|bak|log)$ - [F,L,NC]
+RewriteRule ^(?:preview[^/]*|check-tmdb-localization)\.php$ - [F,L,NC]
 RewriteRule ^(?:cache|tools)/ - [F,L]
 RewriteRule ^(?:test-[^/]+|update-catalog)\.php$ - [F,L]
 RewriteCond %{HTTPS} !=on
