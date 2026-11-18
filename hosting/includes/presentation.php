@@ -61,7 +61,7 @@ function country_label($code){
  return $map[strtoupper((string)$code)]??(string)$code;
 }
 function tmdb_document($path){
- if(!tmdb_enabled()||!preg_match('~^(?:movie|tv)/\d+(?:(?:/season/\d+)(?:/episode/\d+)?|/watch/providers)?$~',$path))return null;
+ if(!tmdb_enabled()||!preg_match('~^(?:movie|tv)/\d+(?:/season/\d+)?(?:/episode/\d+)?$~',$path))return null;
  $cacheId=$path.':ro:v15';$cached=runtime_cache_get('tmdb',$cacheId,86400);if($cached&&is_array($cached['value']))return $cached['value'];
  $params=['language'=>'ro-RO'];$apiKey=trim((string)cfg('tmdb_api_key'));if($apiKey!=='')$params['api_key']=$apiKey;
  if(preg_match('~^(movie|tv)/\d+$~',$path,$m))$params['append_to_response']=$m[1]==='movie'?'translations,videos,release_dates':'translations,videos,content_ratings';

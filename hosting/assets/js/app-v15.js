@@ -89,32 +89,29 @@ if(resumeMeta.type==='tv'&&lastResume?.season&&lastResume?.episode){
 /* The daily five: explicit controls, no automatic rotation. */
 (()=>{const root=document.querySelector('[data-discover]');if(!root)return;const tabs=[...root.querySelectorAll('[data-discover-tab]')],panels=[...root.querySelectorAll('[data-discover-panel]')];function show(index,focus=false){tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;});panels.forEach((panel,i)=>panel.hidden=i!==index);const counter=root.querySelector('[data-discover-count]');if(counter)counter.textContent=String(index+1).padStart(2,'0')+' / '+String(tabs.length).padStart(2,'0');if(focus)tabs[index].focus();}tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>show(i));tab.addEventListener('keydown',e=>{let next=i;if(e.key==='ArrowDown'||e.key==='ArrowRight')next=(i+1)%tabs.length;else if(e.key==='ArrowUp'||e.key==='ArrowLeft')next=(i-1+tabs.length)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();show(next,true);});});})();
 
+
 (() => {
-const watchOptions = document.querySelector('[data-watch-options]');
-watchOptions?.addEventListener('toggle', async () => {
-  if (!watchOptions.open || watchOptions.dataset.state) return;
-  const results = watchOptions.querySelector('.watch-options-results');
-  watchOptions.dataset.state = 'loading';
-  results.textContent = 'Se verifică disponibilitatea…';
-  const {titleId, titleType} = watchOptions.closest('.title-page').dataset;
-  const params = new URLSearchParams({action: 'watch-options', id: titleId, type: titleType});
-  try {
-    const response = await fetch('/api.php?' + params);
-    if (!response.ok) throw new Error();
-    const data = await response.json();
-    results.textContent = '';
-    for (const option of data.options) {
-      const row = document.createElement('p');
-      const label = document.createElement('strong');
-      label.textContent = option.label + ': ';
-      row.append(label, option.names.join(', '));
-      results.append(row);
+  const descriptions = document.querySelectorAll('[data-ranked-summary]');
+  const fetchDescription = async (element) => {
+    try {
+      const response = await fetch('/api.php?action=ranked-summary&id=' + encodeURIComponent(element.dataset.rankedSummary));
+      if (!response.ok) return;
+      const {description} = await response.json();
+      if (description) element.textContent = description;
+    } catch {
+      // The visible Romanian fallback remains when metadata cannot be loaded.
     }
-    if (!data.options.length) results.textContent = 'Momentan nu avem opțiuni confirmate pentru România.';
-    watchOptions.dataset.state = 'ready';
-  } catch {
-    results.textContent = 'Nu am putut verifica disponibilitatea. Închide și redeschide secțiunea pentru a reîncerca.';
-    delete watchOptions.dataset.state;
+  };
+  if (!('IntersectionObserver' in window)) {
+    descriptions.forEach(fetchDescription);
+    return;
   }
-});
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      observer.unobserve(entry.target);
+      fetchDescription(entry.target);
+    }
+  }, {rootMargin: '160px'});
+  descriptions.forEach((element) => observer.observe(element));
 })();

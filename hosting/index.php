@@ -24,13 +24,20 @@ if($route==='catalog'){
     $scope=$route==='home'?'all':($route==='tv'?'tv':'movies');$browseDoc=['recent'=>true];
     if($route==='home'){
         $homeFeed=catalog_json('home.json')?:[];
-        $homeRecent=array_slice((array)($homeFeed['recent_movies']??recent_collection('movies',18)),0,18);
-        $homeTv=array_slice((array)($homeFeed['recent_tv']??recent_collection('tv',12)),0,12);
+        $dailyFilters=['adaugate'=>'azi','gen'=>'','de'=>1880,'pana'=>2100,'nota'=>0,'voturi'=>0,'format'=>'','sort'=>'recent','q'=>''];
+        $homeDaily=[];
+        foreach(['movies'=>'filme','tv'=>'seriale'] as $kind=>$parameter){
+            $requested=max(1,min(100000,(int)query_string($parameter,'1')));
+            $filters=$dailyFilters+['tip'=>$kind];
+            $doc=filtered_catalog($filters,$requested,25);
+            if($requested>$doc['pages'])$doc=filtered_catalog($filters,$doc['pages'],25);
+            $homeDaily[$kind]=$doc;
+        }
         $ranked=catalog_json('ranked/movies.json')?:[];$homeMovieTop=array_slice(array_values(array_filter((array)($homeFeed['rated_movies']??$ranked['items']??[]),static fn($x)=>(int)($x['votes']??0)>=1000)),0,12);
         $homeDiscover=home_discover_items(5);
         $homeFeature=$homeDiscover[0]??null;
         if($homeFeature){$full=load_title($homeFeature['imdb_id'],'movie');if($full)$homeDiscover[0]=$homeFeature=$full;}
-        $items=$homeRecent;$total=count($items);$pages=1;
+        $items=$homeDaily['movies']['items'];$total=$homeDaily['movies']['total'];$pages=1;
         $heading='Recent adăugate';$subheading='Alege următorul film pentru seara ta.';$canonical=site_url('/');
     }else{
         $collectionFilters=collection_filters($scope);$collectionDoc=recent_listing($scope,$collectionFilters,$page,60);$items=$collectionDoc['items'];$total=$collectionDoc['total'];$pages=$collectionDoc['pages'];

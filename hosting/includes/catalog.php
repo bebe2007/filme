@@ -21,7 +21,7 @@ function local_catalog_title($id){
 function filtered_catalog($f,$page=1,$per=36){
  $file=catalog_release_path($f['sort']);$empty=['unavailable'=>true,'items'=>[],'total'=>0,'pages'=>1,'page'=>1];if(!is_file($file)||!function_exists('gzopen'))return $empty;
  $per=max(1,min(200,(int)$per));$page=max(1,min(100000,(int)$page));$offset=($page-1)*$per;$needle=normalize_text($f['q']);
- $cacheId=sha1($file.':'.(string)filemtime($file).':'.json_encode([$f,$page,$per,date('Y-m-d')])) ;
+ $cacheId=sha1($file.':'.(string)filemtime($file).':'.json_encode([$f,$page,$per,(new DateTimeImmutable('now',new DateTimeZone('Europe/Bucharest')))->format('Y-m-d')])) ;
  $cached=function_exists('runtime_cache_get')?runtime_cache_get('queries',$cacheId,300):null;if($cached&&is_array($cached['value'])){remember_title_previews($cached['value']['items']);return $cached['value'];}
  $stream=@gzopen($file,'rb');if(!$stream)return $empty;$total=0;$items=[];
  while(!gzeof($stream)){
