@@ -4,7 +4,7 @@ Baseline: `677560f52fc8786ad8963ab948886b4f9799907f`.
 
 ## Work checklist
 
-- [ ] TMDb credentials: private GitHub Actions secret and private PHP configuration; never commit credentials.
+- [x] TMDb credentials: private GitHub Actions secret and private PHP configuration; never commit credentials.
 - [x] Independent image resolution, including titles without Romanian translations.
 - [x] Consistent metadata and image URLs across compact exports, title pages and search.
 - [x] Persistent metadata cache, correct cache keys and bounded retries.
@@ -41,3 +41,5 @@ Changes, deployment identifiers and remaining blockers will be recorded here.
 - TMDb credentials and initial enrichment are still pending. Full Romanian coverage depends on translations available at TMDb.
 
 Final interface source: `38976cbdb6d0b017ed1cc406320a2fcedb0d74f5`; validation run 44209764627 passed. Asset query versions now use content hashes. Public previews were moved outside public_html; ZIP/backup/log downloads and old preview/debug PHP routes are denied. Catalog retry run 44209764579 is in progress. GitHub secret setup is waiting for interactive account authentication; no TMDb key was received or committed.
+
+TMDb activated on 18 November 2026: repository secret verified by run 44334559507 (`configured=true`, `api_ok=true`); private PHP configuration installed with permissions 0600 and verified HTTP 403 for direct access. Live Game of Thrones page now shows a Romanian synopsis, Romanian episode synopses and a TMDb poster. Temporary credential files removed. Initial 2000-title/200-season enrichment run 44334296341 is in progress. Runtime episode metadata now prefers the requested TMDb localization over an existing IMDb primary episode name.
