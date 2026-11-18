@@ -89,13 +89,15 @@ if(resumeMeta.type==='tv'&&lastResume?.season&&lastResume?.episode){
 /* The daily five: explicit controls, no automatic rotation. */
 (()=>{const root=document.querySelector('[data-discover]');if(!root)return;const tabs=[...root.querySelectorAll('[data-discover-tab]')],panels=[...root.querySelectorAll('[data-discover-panel]')];function show(index,focus=false){tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;});panels.forEach((panel,i)=>panel.hidden=i!==index);const counter=root.querySelector('[data-discover-count]');if(counter)counter.textContent=String(index+1).padStart(2,'0')+' / '+String(tabs.length).padStart(2,'0');if(focus)tabs[index].focus();}tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>show(i));tab.addEventListener('keydown',e=>{let next=i;if(e.key==='ArrowDown'||e.key==='ArrowRight')next=(i+1)%tabs.length;else if(e.key==='ArrowUp'||e.key==='ArrowLeft')next=(i-1+tabs.length)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();show(next,true);});});})();
 
-const watchOptions = $('[data-watch-options]');
+(() => {
+const watchOptions = document.querySelector('[data-watch-options]');
 watchOptions?.addEventListener('toggle', async () => {
   if (!watchOptions.open || watchOptions.dataset.state) return;
-  const results = $('.watch-options-results', watchOptions);
+  const results = watchOptions.querySelector('.watch-options-results');
   watchOptions.dataset.state = 'loading';
   results.textContent = 'Se verifică disponibilitatea…';
-  const params = new URLSearchParams({action: 'watch-options', id: meta.id, type: meta.type});
+  const {titleId, titleType} = watchOptions.closest('.title-page').dataset;
+  const params = new URLSearchParams({action: 'watch-options', id: titleId, type: titleType});
   try {
     const response = await fetch('/api.php?' + params);
     if (!response.ok) throw new Error();
@@ -115,3 +117,4 @@ watchOptions?.addEventListener('toggle', async () => {
     delete watchOptions.dataset.state;
   }
 });
+})();
