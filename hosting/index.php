@@ -26,7 +26,7 @@ if($route==='catalog'){
         $homeFeed=catalog_json('home.json')?:[];
         $homeRecent=array_slice((array)($homeFeed['recent_movies']??recent_collection('movies',18)),0,18);
         $homeTv=array_slice((array)($homeFeed['recent_tv']??recent_collection('tv',12)),0,12);
-        $ranked=catalog_json('ranked/movies.json')?:[];$homeMovieTop=array_slice((array)($homeFeed['rated_movies']??$ranked['items']??[]),0,12);
+        $ranked=catalog_json('ranked/movies.json')?:[];$homeMovieTop=array_slice(array_values(array_filter((array)($homeFeed['rated_movies']??$ranked['items']??[]),static fn($x)=>(int)($x['votes']??0)>=1000)),0,12);
         $featured=(array)($homeFeed['featured']??[]);if(!$featured)$featured=editorial_catalogue_items();$homeFeature=$featured[0]??($homeRecent[0]??null);
         if($homeFeature){$full=load_title($homeFeature['imdb_id'],title_type($homeFeature));if($full)$homeFeature=$full;}
         $items=$homeRecent;$total=count($items);$pages=1;
