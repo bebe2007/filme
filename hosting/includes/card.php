@@ -5,7 +5,8 @@ $name=title_name($item);$type=title_type($item);$poster=item_poster_url($item);$
 ?>
 <article class="movie-card" data-title-id="<?=e($id)?>">
  <a class="movie-card-link" href="<?=e(title_path($item))?>" aria-label="<?=e($name)?> — vezi detalii">
-  <div class="poster"><img src="<?=e($poster)?>" alt="Poster <?=e($name)?>" width="342" height="513" loading="<?=$eager?'eager':'lazy'?>" decoding="async" <?=poster_attributes($item)?>>
+  <div class="poster"><img src="<?=e($poster)?>" alt="Poster <?=e($name)?>" width="342" height="513" loading="<?=$eager?'eager':'lazy'?>" decoding="async" <?=poster_attributes($item,true)?>>
+   <div class="poster-reserve" hidden aria-hidden="true"><?=icon('film')?><span><?=e($name)?></span></div>
    <?php if($rating>0):?><span class="card-rating"><?=icon('star')?><strong><?=e(number_format($rating,1,',',''))?></strong><span class="rating-source">IMDb</span></span><?php endif;?>
    <?php if($year):?><span class="card-year"><?=icon('calendar')?><span><?=$year?></span></span><?php endif;?>
    <span class="card-details">Vezi detalii <?=icon('arrow')?></span>

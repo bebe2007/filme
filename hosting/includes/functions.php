@@ -99,10 +99,10 @@ function image_fallback_url($item,$kind='poster'){
  $primary=$kind==='poster'?item_poster_url($item):($item['background']??'');if(valid_image_url($primary))$params['exclude']=$primary;
  return '/media.php?'.http_build_query($params);
 }
-function poster_attributes($item){
+function poster_attributes($item,$useCardReserve=false){
  $url=item_poster_url($item);$responsive='';
  if(preg_match('~^https://image\.tmdb\.org/t/p/w[0-9]+(/[^?]+)$~',$url,$m))$responsive=' srcset="'.e('https://image.tmdb.org/t/p/w342'.$m[1]).' 342w, '.e('https://image.tmdb.org/t/p/w500'.$m[1]).' 500w" sizes="(max-width: 520px) 46vw, (max-width: 900px) 30vw, 220px"';
- return 'referrerpolicy="no-referrer" data-fallback="'.e(image_fallback_url($item)).'" data-last-source="'.e(poster_source_url($item['imdb_id']??'')).'"'.$responsive;
+ return 'referrerpolicy="no-referrer" data-fallback="'.e(image_fallback_url($item).($useCardReserve?'&card=1':'')).'" data-last-source="'.e(poster_source_url($item['imdb_id']??'')).'"'.$responsive;
 }
 
 function item_background_url($item) {

@@ -38,3 +38,55 @@ body:not(.js-enabled) .synopsis-text{display:block}body:not(.js-enabled) .catalo
 .source-synopsis{margin:16px 0;font-size:13px;color:var(--muted)}.source-synopsis summary{cursor:pointer;padding:8px 0;color:#b7c1cf}.source-synopsis p{font-size:14px;line-height:1.8;max-width:76ch}
 .discover-tab{grid-template-columns:32px minmax(0,1fr) 12px;gap:15px}.discover-rank{display:grid;place-items:center;width:32px;height:40px;border:1px solid #ffffff13;border-radius:8px;background:#ffffff02;color:#8b98aa}.discover-tab[aria-selected=true] .discover-rank{border-color:#e3bf8140;background:#e3bf810a}.discover-image img[src*="media.php"],.discover-image img[src*="placeholder.svg"]{filter:blur(16px);transform:scale(1.08);opacity:.35}.episode-rating{display:inline-flex;align-items:center;gap:4px}.episode-rating .icon{width:12px;height:12px;color:var(--gold)}
 @media(max-width:760px){.discover-tab{grid-template-columns:32px minmax(0,1fr) 12px;min-height:74px;gap:13px}.catalog-back-top{display:none!important}}
+
+/* Title details and poster fallback */
+.title-page :is(h2,dt,.eyebrow,.original-title,.series-count,.season-selector),
+.title-page .title-meta span,
+.title-page :is(.catalog-subtitle-notice,.source-synopsis)>summary {
+  display: flex;
+  align-items: center;
+  gap: .48em;
+}
+.title-page :is(h2,dt,.title-meta,.original-title,.series-count,.season-selector,summary,.title-provenance) .icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  color: var(--gold, #e5c17d);
+}
+.title-page .title-provenance .icon,
+.title-page .title-rating>span .icon {
+  vertical-align: -.14em;
+  margin-inline-end: .35em;
+}
+.poster-reserve:not([hidden]) {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  background: radial-gradient(ellipse at top, #29364a, #131923 72%);
+  color: #f3e5cf;
+}
+.poster-reserve .icon { width: 30px; height: 30px; color: #e5c17d; }
+.poster-reserve span { font-size: clamp(.8rem, 1.25vw, 1rem); line-height: 1.35; }
+.discover-tab[aria-selected=true] { box-shadow: inset 3px 0 #e5c17d; }
+@media (min-width: 761px) {
+  .discover-stage { min-height: 440px; }
+  .discover-selection { padding-block: 16px; }
+  .discover-tab { min-height: 63px; padding-block: 8px; }
+}
+
+.watch-options {
+  margin-block: 24px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.watch-options summary { cursor: pointer; font-weight: 650; }
+.watch-options summary .icon { margin-inline: .25em; vertical-align: -.12em; }
+.watch-options p { margin-block: 10px 0; }

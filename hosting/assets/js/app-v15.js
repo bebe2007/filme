@@ -18,21 +18,28 @@ function fallback(img){
  if(!(img instanceof HTMLImageElement)||img.dataset.failed==='final')return;
  img.removeAttribute('srcset');
  const last=img.closest('.cast-photo,.person-portrait')?'/assets/img/person-placeholder.svg':img.closest('.episode-media')?'/assets/img/episode-placeholder.svg':'/assets/img/poster-placeholder.svg';
+ const reserve=img.closest('.poster')?.querySelector('.poster-reserve');
+ const showReserve=()=>{if(reserve){img.hidden=true;reserve.hidden=false;}};
  if(!img._fallbackSources){const seen=new Set([img.src]);img._fallbackSources=[img.dataset.fallback,img.dataset.lastSource,last].filter(Boolean).map(imageURL).filter(url=>{if(seen.has(url))return false;seen.add(url);return true;});}
- const next=img._fallbackSources.shift();if(!next){img.dataset.failed='final';return;}
- img.dataset.failed=next===new URL(last,location.href).href?'final':'once';img.src=next;
+ const next=img._fallbackSources.shift();if(!next){img.dataset.failed='final';showReserve();return;}
+ const terminal=next===new URL(last,location.href).href;
+ img.dataset.failed=terminal?'final':'once';
+ if(terminal&&reserve){showReserve();return;}
+ img.src=next;
 }
-function imageShape(img){if(!(img instanceof HTMLImageElement)||!img.naturalWidth||!img.naturalHeight)return;if((img.closest('.movie-card .poster')||img.classList.contains('title-poster'))&&img.naturalWidth>img.naturalHeight){fallback(img);return;}img.classList.toggle('portrait-source',img.naturalHeight>img.naturalWidth)}
+function imageShape(img){if(!(img instanceof HTMLImageElement)||!img.naturalWidth||!img.naturalHeight)return;if(img.closest('.movie-card .poster')&&new URL(img.currentSrc||img.src).pathname==='/assets/img/poster-placeholder.svg'){fallback(img);return;}if((img.closest('.movie-card .poster')||img.classList.contains('title-poster'))&&img.naturalWidth>img.naturalHeight){fallback(img);return;}img.classList.toggle('portrait-source',img.naturalHeight>img.naturalWidth)}
 document.addEventListener('load',e=>imageShape(e.target),true);$$('img').forEach(imageShape);
 document.addEventListener('error',e=>fallback(e.target),true);$$('img').forEach(x=>{if(x.complete&&!x.naturalWidth)fallback(x)});
 /* Player loading is observable; actual playback events depend on the external provider. */
-const modal=$('#playerModal'),frame=$('#playerFrame'),loading=$('#playerLoading'),slow=$('#playerTimeout');let current=null,lastSource='',playerFocus=null,loadTimer;
+const modal=$('#playerModal'),frame=$('#playerFrame'),loading=$('#playerLoading'),slow=$('#playerTimeout');let current=null,lastSource='',playerFocus=null,loadTimer,playbackTimer;
 function videoURL(src,trailer){try{const u=new URL(src,location.href);return u.origin===(trailer?'https://www.youtube-nocookie.com':provider)?u:null}catch(_){return null}}
-function load(src){clearTimeout(loadTimer);if(loading)loading.hidden=false;if(slow)slow.hidden=true;frame.src=src;loadTimer=setTimeout(()=>{if(loading)loading.hidden=true;if(slow)slow.hidden=false},15000)}
+function load(src){clearTimeout(loadTimer);clearTimeout(playbackTimer);if(loading)loading.hidden=false;if(slow)slow.hidden=true;frame.src=src;loadTimer=setTimeout(()=>{if(loading)loading.hidden=true;if(slow)slow.hidden=false},15000)}
 function play(src,title,meta,trailer=false){const url=videoURL(src,trailer);if(!url||!frame||!modal){toast('Playerul nu este disponibil pentru acest titlu.');return}if(!privacy()?.external()){privacy()?.requestMedia(()=>play(src,title,meta,trailer));return}playerFocus=document.activeElement;current=trailer?null:Object.assign({},titleMeta(),meta||{});if(current){const old=history()[watchKey(current)];if(old?.progress>=10&&!old.completed)url.searchParams.set('startAt',Math.floor(old.progress))}lastSource=url.href;$('#playerModalTitle').textContent=title||'Player';modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');body.classList.add('modal-open');load(lastSource);$('#playerClose').focus()}
-function closePlayer(){if(!modal?.classList.contains('is-open'))return;clearTimeout(loadTimer);frame.src='about:blank';modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');body.classList.remove('modal-open');current=null;renderPersonal();if(playerFocus?.isConnected)playerFocus.focus()}
-frame?.addEventListener('load',()=>{if(frame.src==='about:blank'||!modal?.classList.contains('is-open'))return;clearTimeout(loadTimer);if(loading)loading.hidden=true;if(slow)slow.hidden=true});frame?.addEventListener('error',()=>{if(loading)loading.hidden=true;if(slow)slow.hidden=false});$('#playerClose')?.addEventListener('click',closePlayer);$('#playerRetry')?.addEventListener('click',()=>{if(lastSource)load(lastSource)});modal?.addEventListener('click',e=>{if(e.target===modal)closePlayer()});
-window.addEventListener('message',e=>{if(e.origin!==provider||e.source!==frame?.contentWindow||!current||!allowed())return;let p=e.data;if(typeof p==='string'){try{p=JSON.parse(p)}catch(_){return}}if(p?.type!=='PLAYER_EVENT'||!p.data)return;const d=p.data,progress=Number(d.player_progress),duration=Number(d.player_duration);if(!Number.isFinite(progress)||!Number.isFinite(duration)||progress<0||duration<0||(!progress&&!duration))return;const row=Object.assign({},current,{progress,duration,status:d.player_status||'',updated:Date.now()});row.completed=row.status==='completed'||(duration>0&&progress/duration>.96);if(row.completed)row.progress=0;const rows=history();rows[watchKey(row)]=row;save(WK,Object.fromEntries(Object.entries(rows).sort((a,b)=>b[1].updated-a[1].updated).slice(0,40)))});
+function closePlayer(){if(!modal?.classList.contains('is-open'))return;clearTimeout(loadTimer);clearTimeout(playbackTimer);frame.src='about:blank';modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');body.classList.remove('modal-open');current=null;renderPersonal();if(playerFocus?.isConnected)playerFocus.focus()}
+frame?.addEventListener('load',()=>{if(frame.src==='about:blank'||!modal?.classList.contains('is-open'))return;clearTimeout(loadTimer);if(loading)loading.hidden=true;if(slow)slow.hidden=true;
+ if(current)playbackTimer=setTimeout(()=>{if(slow)slow.hidden=false},20000);
+});frame?.addEventListener('error',()=>{if(loading)loading.hidden=true;if(slow)slow.hidden=false});$('#playerClose')?.addEventListener('click',closePlayer);$('#playerRetry')?.addEventListener('click',()=>{if(lastSource)load(lastSource)});modal?.addEventListener('click',e=>{if(e.target===modal)closePlayer()});
+window.addEventListener('message',e=>{if(e.origin!==provider||e.source!==frame?.contentWindow||!current)return;let p=e.data;if(typeof p==='string'){try{p=JSON.parse(p)}catch(_){return}}if(p?.type!=='PLAYER_EVENT'||!p.data)return;const d=p.data,progress=Number(d.player_progress),duration=Number(d.player_duration);if(!Number.isFinite(progress)||!Number.isFinite(duration)||progress<0||duration<0||(!progress&&!duration))return;clearTimeout(playbackTimer);if(slow)slow.hidden=true;if(!allowed())return;const row=Object.assign({},current,{progress,duration,status:d.player_status||'',updated:Date.now()});row.completed=row.status==='completed'||(duration>0&&progress/duration>.96);if(row.completed)row.progress=0;const rows=history();rows[watchKey(row)]=row;save(WK,Object.fromEntries(Object.entries(rows).sort((a,b)=>b[1].updated-a[1].updated).slice(0,40)))});
 $$('.js-trailer-resolve').forEach(btn=>{fetch('/trailer.php?id='+encodeURIComponent(btn.dataset.id)+'&type='+encodeURIComponent(btn.dataset.type||'movie'),{credentials:'same-origin',headers:{Accept:'application/json'}}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{if(!d.ok||!videoURL(d.url,true))throw Error();btn.dataset.trailer=d.url;btn.classList.remove('js-trailer-resolve','is-resolving');btn.classList.add('js-trailer');btn.disabled=false;$('[data-trailer-label]',btn).textContent='Trailer'}).catch(()=>{btn.disabled=true;btn.classList.remove('is-resolving');$('[data-trailer-label]',btn).textContent='Trailer indisponibil';btn.title='Nu am găsit un trailer disponibil.'})});
 /* Favorites and consent-aware continuation */
 let pendingFavorite=null,watchFocus=null;
@@ -81,3 +88,30 @@ if(resumeMeta.type==='tv'&&lastResume?.season&&lastResume?.episode){
 
 /* The daily five: explicit controls, no automatic rotation. */
 (()=>{const root=document.querySelector('[data-discover]');if(!root)return;const tabs=[...root.querySelectorAll('[data-discover-tab]')],panels=[...root.querySelectorAll('[data-discover-panel]')];function show(index,focus=false){tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;});panels.forEach((panel,i)=>panel.hidden=i!==index);const counter=root.querySelector('[data-discover-count]');if(counter)counter.textContent=String(index+1).padStart(2,'0')+' / '+String(tabs.length).padStart(2,'0');if(focus)tabs[index].focus();}tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>show(i));tab.addEventListener('keydown',e=>{let next=i;if(e.key==='ArrowDown'||e.key==='ArrowRight')next=(i+1)%tabs.length;else if(e.key==='ArrowUp'||e.key==='ArrowLeft')next=(i-1+tabs.length)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();show(next,true);});});})();
+
+const watchOptions = $('[data-watch-options]');
+watchOptions?.addEventListener('toggle', async () => {
+  if (!watchOptions.open || watchOptions.dataset.state) return;
+  const results = $('.watch-options-results', watchOptions);
+  watchOptions.dataset.state = 'loading';
+  results.textContent = 'Se verifică disponibilitatea…';
+  const params = new URLSearchParams({action: 'watch-options', id: meta.id, type: meta.type});
+  try {
+    const response = await fetch('/api.php?' + params);
+    if (!response.ok) throw new Error();
+    const data = await response.json();
+    results.textContent = '';
+    for (const option of data.options) {
+      const row = document.createElement('p');
+      const label = document.createElement('strong');
+      label.textContent = option.label + ': ';
+      row.append(label, option.names.join(', '));
+      results.append(row);
+    }
+    if (!data.options.length) results.textContent = 'Momentan nu avem opțiuni confirmate pentru România.';
+    watchOptions.dataset.state = 'ready';
+  } catch {
+    results.textContent = 'Nu am putut verifica disponibilitatea. Închide și redeschide secțiunea pentru a reîncerca.';
+    delete watchOptions.dataset.state;
+  }
+});

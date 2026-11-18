@@ -24,5 +24,6 @@ $field=in_array($kind,['backdrop','episode'],true)?'background':'poster';
 if($url==='')foreach([$meta[$field]??'', $preview[$field]??'', $meta['poster']??'', $preview['poster']??''] as $candidate){if(valid_image_url($candidate)&&$candidate!==$excluded){$url=$candidate;break;}}
 if($url==='')$url=in_array($kind,['backdrop','episode'],true)?'https://images.metahub.space/background/medium/'.rawurlencode($id).'/img':poster_source_url($id);
 // Redirect only. Images are requested directly by the visitor's browser; no files are saved.
+if($url===$excluded&&query_string('card')==='1'){http_response_code(404);exit;}
 if($url===$excluded){header('Content-Type: image/svg+xml');header('Cache-Control: public, max-age=3600');readfile(__DIR__.'/assets/img/poster-placeholder.svg');exit;}
 media_redirect($url);

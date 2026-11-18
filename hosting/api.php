@@ -2,6 +2,34 @@
 require __DIR__ . '/includes/functions.php';
 header('Content-Type: application/json; charset=UTF-8');header('X-Robots-Tag: noindex, nofollow',true);
 $action=query_string('action');
+if ($action === 'watch-options') {
+    $id = strtolower(query_string('id'));
+    if (!preg_match('/^tt\d{5,12}$/', $id)) {
+        http_response_code(400);
+        echo safe_json(['ok'=>false]);
+        exit;
+    }
+    $item = load_title($id, query_string('type'));
+    if (empty($item['tmdb_id'])) {
+        echo safe_json(['ok'=>true, 'options'=>[]]);
+        exit;
+    }
+    $type = title_type($item) === 'tv' ? 'tv' : 'movie';
+    $document = tmdb_document($type.'/'.(int)$item['tmdb_id'].'/watch/providers');
+    if (!is_array($document['results'] ?? null)) {
+        http_response_code(503);
+        echo safe_json(['ok'=>false]);
+        exit;
+    }
+    $region = $document['results']['RO'] ?? [];
+    $options = [];
+    foreach (['flatrate'=>'Abonament', 'free'=>'Gratuit', 'ads'=>'Cu reclame', 'rent'=>'Închiriere', 'buy'=>'Cumpărare'] as $key=>$label) {
+        $names = array_unique(array_filter(array_column($region[$key] ?? [], 'provider_name'), 'is_string'));
+        if ($names) $options[] = ['label'=>$label, 'names'=>array_values($names)];
+    }
+    echo safe_json(['ok'=>true, 'options'=>$options]);
+    exit;
+}
 if($action==='resume'){
  $item=load_title(strtolower(query_string('id')),'tv');if(!$item||title_type($item)!=='tv'){http_response_code(404);echo safe_json(['ok'=>false]);exit;}
  $tuples=[];foreach((array)($item['seasons']??[]) as $season)foreach((array)($season['episodes_data']??[]) as $ep)$tuples[]=[(int)$season['season'],(int)$ep['episode']];sort($tuples);
