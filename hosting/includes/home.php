@@ -48,7 +48,7 @@ foreach($dailySections as $kind=>$section):
  <div class="section-head"><div><h2><?=icon('star')?> Filme cu note mari</h2><p>Când nu știu ce film să aleg, mă uit și la ce au apreciat alți spectatori. Aici am pus filme cu note mari pe IMDb și cu cel puțin 1.000 de voturi. Lângă fiecare poster găsești titlul, anul și câteva rânduri despre poveste, ca să-ți faci o idee înainte să deschizi pagina filmului și să vezi trailerul.</p></div><a class="section-more" href="<?=e(catalog_link(['tip'=>'movies','sort'=>'rating','voturi'=>1000]))?>">Explorează selecția <?=icon('arrow')?></a></div>
  <div class="episode-grid ranked-film-grid">
  <?php foreach(catalog_filter_items($homeMovieTop) as $ratedFilm):
-   $name=title_name($ratedFilm);$id=$ratedFilm['imdb_id'];$path=title_path($ratedFilm);
+   $name=trim((string)($ratedFilm['original_title']??''))?: (trim((string)($ratedFilm['title']??''))?:title_name($ratedFilm));$id=$ratedFilm['imdb_id'];$path=title_path($ratedFilm);
    $summary=isset(editorial_entries()[$id])||!empty($ratedFilm['editorial']['description'])||strpos(strtolower((string)($ratedFilm['description_language']??'')),'ro')===0?editorial_summary($ratedFilm):'';
  ?>
  <article class="episode ranked-film">
